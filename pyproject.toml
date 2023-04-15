@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "reportextractorpy"
+version = "0.1.0"
+description = ""
+authors = ["nicksunderland <nicholas.p.sunderland@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
