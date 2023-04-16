@@ -1,0 +1,19 @@
+---
+ao_sov:
+  description: "Sinus of Valsalva diameter"
+  value_type: "float"
+  units: "cm"
+  min: 0
+  max: 10
+ao_stj:
+  description: "Sinotubular junction diameter"
+  value_type: "float"
+  units: "cm"
+  min: 0
+  max: 10
+ao_asc:
+  description: "Ascending aorta diameter"
+  value_type: "float"
+  units: "cm"
+  min: 0
+  max: 10

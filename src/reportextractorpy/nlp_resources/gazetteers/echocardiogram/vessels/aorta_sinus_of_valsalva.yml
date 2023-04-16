@@ -1,0 +1,16 @@
+---
+annot_type: "Anatomy"
+annot_features:
+  major: "aorta"
+  minor: "sinus_of_valsalva"
+string_gazetteer:
+  case_insens_matches:  # input these as all lowercase
+    - "sov"
+    - "s.o.v"
+    - "sinus of valsalva"
+    - "sinus valsalva"
+    - "sinus fo valsalva"
+    - "sinus of valslava"
+    - "mm_sinus_of_valsalva"
+    - "sinoval"
+  case_sens_matches:  # input these exactly as they appear in the text

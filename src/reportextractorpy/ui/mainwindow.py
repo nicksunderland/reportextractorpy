@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QMainWindow
-from ReportExtractor.ui.ui_converter import UiFileConverter
-from ReportExtractor.ui.ui_mainwindow import Ui_MainWindow
-from ReportExtractor.data import TestGate
+from reportextractorpy.ui.ui_converter import UiFileConverter
+from reportextractorpy.ui.ui_mainwindow import Ui_MainWindow
+from reportextractorpy.data_processing import DataProcessing
 
 UiFileConverter()  # update the UI .py files
 
@@ -20,4 +20,4 @@ class MainWindow(QMainWindow):
     @staticmethod
     def button_pressed():
         print("button pressed")
-        TestGate()
+        DataProcessing().run()

@@ -8,7 +8,11 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-
+PyQt5 = "5.15.9"
+gatenlp = "1.0.8"
+nltk = "3.8.1"
+pyYAML = "6.0"
+importlib-resources = "5.12.0"
 
 [build-system]
 requires = ["poetry-core"]
