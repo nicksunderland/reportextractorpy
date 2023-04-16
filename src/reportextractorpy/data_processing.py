@@ -4,7 +4,6 @@ from gatenlp.processing.gazetteer import StringGazetteer  # TokenGazetteer, Stri
 from gatenlp.processing.tokenizer import NLTKTokenizer
 from nltk.tokenize.regexp import WordPunctTokenizer
 from nltk.tokenize.regexp import RegexpTokenizer
-from reportextractorpy.report import Report
 from reportextractorpy.utils import Utils
 from os import path
 from yaml import safe_load
