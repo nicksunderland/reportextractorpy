@@ -1,38 +1,55 @@
 from gatenlp import Document
+from gatenlp.processing.pipeline import Pipeline
 from gatenlp.processing.gazetteer import StringGazetteer  # TokenGazetteer, StringRegexAnnotator
 from gatenlp.processing.tokenizer import NLTKTokenizer
 from nltk.tokenize.regexp import WordPunctTokenizer
+from nltk.tokenize.regexp import RegexpTokenizer
 from reportextractorpy.report import Report
 from reportextractorpy.utils import Utils
-from datetime import datetime
-
+from os import path
 from yaml import safe_load
 
 
 class DataProcessing:
-    def __init__(self):
-        self.tokenizer = NLTKTokenizer(nltk_tokenizer=WordPunctTokenizer(), token_type="Token", outset_name="")
+    def __init__(self, mode):
+        self.mode = mode
+        self.data_dict = self.__gen_data_dict()
+
+        # ?add nltk_sent_tokenizer=RegexpTokenizer() to NLTKTokenizer below?
+        # internal sentence splits: (?:\.){1,3}"?|(?:!|\?){1,4}"?
+        # external sentence splits: ???
+        # non-split patterns
+        self.tokenizer = NLTKTokenizer(nltk_tokenizer=WordPunctTokenizer(),
+                                       token_type="Token",
+                                       space_token_type="Space")
         self.str_gaz_case_sens = self.__gen_str_gazetteer(case_sens=True)
         self.str_gaz_case_insens = self.__gen_str_gazetteer(case_sens=False)
+        print(self)
 
     def run(self):
-        doc = Document(self.example_text())
-        doc = self.tokenizer(doc)
-        doc = self.str_gaz_case_sens(doc)
-        doc = self.str_gaz_case_insens(doc)
-        defset = doc.annset()
-        custset = doc.annset("echocardiogram")
-        print(defset)
-        print(custset)
+        docs = [Document(self.example_text()), Document(self.example_text())]
+
+        pipeline = Pipeline((self.tokenizer, "Tokenizer"),
+                            (self.str_gaz_case_sens, "Gazetteer - case sensitive"),
+                            (self.str_gaz_case_insens, "Gazetteer - case insensitive"))
+
+        docs = pipeline.pipe(docs)
+
+        for i, doc in enumerate(docs):
+            defset = doc.annset()
+            custset = doc.annset(self.mode)
+            print("Doc #" + str(i))
+            print(defset)
+            print(custset)
+
         #rep = Report("echocardiogram", "ID_100000", datetime(2000, 10, 10, 0, 0, 0), "some sample report text")
 
-    @staticmethod
-    def __gen_str_gazetteer(case_sens: bool = True) -> StringGazetteer:
+    def __gen_str_gazetteer(self, case_sens: bool = True) -> StringGazetteer:
 
         if case_sens:
-            gazetteer = StringGazetteer(outset_name="echocardiogram", longest_only=True, ws_clean=True, map_chars=None)
+            gazetteer = StringGazetteer(outset_name=self.mode, longest_only=True, ws_clean=True, map_chars=None)
         else:
-            gazetteer = StringGazetteer(outset_name="echocardiogram", longest_only=True, ws_clean=True, map_chars="lower")
+            gazetteer = StringGazetteer(outset_name=self.mode, longest_only=True, ws_clean=True, map_chars="lower")
 
         for fp in Utils.gazetteer_config_files():
             with open(fp) as f:
@@ -50,6 +67,12 @@ class DataProcessing:
                                  list_features=gaz_config["annot_features"])
 
         return gazetteer
+
+    def __gen_data_dict(self) -> dict:
+        config_path = path.join(Utils.configs_path(), self.mode + ".yml")
+        with open(config_path) as f:
+            config = safe_load(f)
+            return config
 
     @staticmethod
     def example_text():
@@ -92,3 +115,9 @@ class DataProcessing:
  Mild concentric left ventricular hypertrophy.
  Moderate left atrial dilatation.
  No gross valvular lesion demonstrated."""
+
+    def __str__(self):
+        return("-----------------------------------\n"
+               "DataProcessing object:\n"
+               "\tMode:      {0}\n"
+               "\tData dict: {1}".format(self.mode, self.data_dict))

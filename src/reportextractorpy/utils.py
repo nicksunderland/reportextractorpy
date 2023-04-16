@@ -6,6 +6,10 @@ import importlib_resources
 class Utils:
 
     @staticmethod
+    def configs_path() -> str:
+        return str(importlib_resources.files("reportextractorpy").joinpath("configs"))
+
+    @staticmethod
     def nlp_resources_path() -> str:
         return str(importlib_resources.files("reportextractorpy").joinpath("nlp_resources"))
 
