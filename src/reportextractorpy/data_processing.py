@@ -3,9 +3,13 @@ from gatenlp.processing.pipeline import Pipeline
 from gatenlp.processing.gazetteer import StringGazetteer  # TokenGazetteer, StringRegexAnnotator
 from gatenlp.processing.tokenizer import NLTKTokenizer
 from nltk.tokenize.regexp import WordPunctTokenizer
+import reportextractorpy
 from reportextractorpy.utils import Utils
 from os import path
 from yaml import safe_load
+import sys
+from importlib.util import spec_from_file_location, module_from_spec
+from pkgutil import walk_packages, iter_modules
 
 from gatenlp.pam.pampac import PampacAnnotator, Pampac, Rule
 from gatenlp.pam.pampac import Ann, AnnAt, Or, And, Filter, Find, Lookahead, N, Seq, Text
@@ -57,24 +61,40 @@ class DataProcessing:
         print(type(text))
         return str(text) + "_helloWorld"
 
-    def __gen_pattern_annotator(self) -> PampacAnnotator:
-        pat1 = Seq(Ann("Token"),
-                   AnnAt("Anatomy", name="anat1"),
-                   AnnAt("Anatomy", name="anat2"),
-                   AnnAt("Token"))
-        action1 = AddAnn(type="PATTERN1",
-                         features={"foo0": GetText(),
-                                   "foo2": GetText("anat1"),
-                                   "func": GetText("anat2"),
-                                   "foo4": GetType("anat1"),
-                                   "foo5": GetFeature("anat1", "major")})
+    def __gen_pattern_annotator(self):  # -> PampacAnnotator:
 
-        rule1 = Rule(pat1, action1)
-        pampac1 = Pampac(rule1, skip="longest", select="first")
-        pattern_annotator = PampacAnnotator(pampac1,
-                                            annspec=[("", ["Anatomy", "Token"])],
-                                            outset_name=self.mode)
-        return pattern_annotator
+        for fp in Utils.pattern_config_files():
+            spec = spec_from_file_location("annotation_pattern", fp)
+            module = module_from_spec(spec)
+            spec.loader.exec_module(module)
+            sys.modules['annotation_pattern'] = module
+            Pattern = getattr(module, 'Pattern')
+            pattern = Pattern()
+        exit()
+        
+        #
+        # pat1 = Seq(Ann("Token"),
+        #            AnnAt("Anatomy", name="anat1"))
+        # pat2 = Seq(Ann("Token"),
+        #            AnnAt("Anatomy", name="anat1"),
+        #            AnnAt("Anatomy", name="anat2"),
+        #            AnnAt("Token"))
+        # action1 = AddAnn(type="PATTERN1",
+        #                  features={"foo0": GetText(),
+        #                            "foo2": GetText("anat1"),
+        #                            "foo4": GetType("anat1"),
+        #                            "foo5": GetFeature("anat1", "major")})
+        # action2 = AddAnn(type="PAT2",
+        #                  features={"foo0": GetText()})
+        #
+        # rule1 = Rule(pat1, action1, priority=0)
+        # rule2 = Rule(pat2, action2, priority=1)
+        # rule_list = [rule1, rule2]
+        # pampac1 = Pampac(*rule_list, skip="longest", select="highest")
+        # pattern_annotator = PampacAnnotator(pampac1,
+        #                                     annspec=[("", ["Anatomy", "Token"])],
+        #                                     outset_name=self.mode)
+        # return pattern_annotator
 
     @staticmethod
     def __gen_str_gazetteer(case_sens: bool = True) -> StringGazetteer:
