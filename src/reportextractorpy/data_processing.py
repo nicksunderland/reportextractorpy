@@ -3,7 +3,7 @@ from gatenlp.processing.pipeline import Pipeline
 from gatenlp.processing.gazetteer import StringGazetteer  # TokenGazetteer, StringRegexAnnotator
 from gatenlp.processing.tokenizer import NLTKTokenizer
 from nltk.tokenize.regexp import WordPunctTokenizer
-import reportextractorpy
+from typing import List
 from reportextractorpy.utils import Utils
 from os import path
 from yaml import safe_load
@@ -31,16 +31,16 @@ class DataProcessing:
                                        token_type="Token")
         self.str_gaz_case_sens = self.__gen_str_gazetteer(case_sens=True)
         self.str_gaz_case_insens = self.__gen_str_gazetteer(case_sens=False)
-        self.pattern_matcher = self.__gen_pattern_annotator()
+        self.pattern_annotators = self.__gen_pattern_annotators()
         print(self)
 
     def run(self):
         docs = [Document(self.example_text()), Document(self.example_text())]
 
-        pipeline = Pipeline((self.tokenizer, "Tokenizer"),
-                            (self.str_gaz_case_sens, "Gazetteer - case sensitive"),
-                            (self.str_gaz_case_insens, "Gazetteer - case insensitive"),
-                            (self.pattern_matcher, "PAMPAC annotator"))
+        pipeline = Pipeline(self.tokenizer,
+                            self.str_gaz_case_sens,
+                            self.str_gaz_case_insens,
+                            *self.pattern_annotators)
 
         docs = pipeline.pipe(docs)
 
@@ -55,46 +55,17 @@ class DataProcessing:
         #rep = Report("echocardiogram", "ID_100000", datetime(2000, 10, 10, 0, 0, 0), "some sample report text")
 
     @staticmethod
-    def foo_func(text):
-        print("here")
-        print(text)
-        print(type(text))
-        return str(text) + "_helloWorld"
-
-    def __gen_pattern_annotator(self):  # -> PampacAnnotator:
-
+    def __gen_pattern_annotators() -> List[PampacAnnotator]:
+        annotators = []
         for fp in Utils.pattern_config_files():
             spec = spec_from_file_location("annotation_pattern", fp)
             module = module_from_spec(spec)
             spec.loader.exec_module(module)
             sys.modules['annotation_pattern'] = module
-            Pattern = getattr(module, 'Pattern')
-            pattern = Pattern()
-        exit()
-        
-        #
-        # pat1 = Seq(Ann("Token"),
-        #            AnnAt("Anatomy", name="anat1"))
-        # pat2 = Seq(Ann("Token"),
-        #            AnnAt("Anatomy", name="anat1"),
-        #            AnnAt("Anatomy", name="anat2"),
-        #            AnnAt("Token"))
-        # action1 = AddAnn(type="PATTERN1",
-        #                  features={"foo0": GetText(),
-        #                            "foo2": GetText("anat1"),
-        #                            "foo4": GetType("anat1"),
-        #                            "foo5": GetFeature("anat1", "major")})
-        # action2 = AddAnn(type="PAT2",
-        #                  features={"foo0": GetText()})
-        #
-        # rule1 = Rule(pat1, action1, priority=0)
-        # rule2 = Rule(pat2, action2, priority=1)
-        # rule_list = [rule1, rule2]
-        # pampac1 = Pampac(*rule_list, skip="longest", select="highest")
-        # pattern_annotator = PampacAnnotator(pampac1,
-        #                                     annspec=[("", ["Anatomy", "Token"])],
-        #                                     outset_name=self.mode)
-        # return pattern_annotator
+            PatternClass = getattr(module, 'Pattern')
+            pat_annotator = PatternClass().annotator()
+            annotators.append(pat_annotator)
+        return annotators
 
     @staticmethod
     def __gen_str_gazetteer(case_sens: bool = True) -> StringGazetteer:
@@ -127,6 +98,15 @@ class DataProcessing:
     @staticmethod
     def example_text():
         return """token sov stj token"""
+
+
+
+
+
+
+
+
+
  #
  # Report:
  # Left ventricle:

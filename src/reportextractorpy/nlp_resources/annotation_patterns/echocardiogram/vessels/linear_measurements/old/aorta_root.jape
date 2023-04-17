@@ -1,0 +1,121 @@
+Imports: {
+	import static gate.Utils.*;
+	import BHI.ReportExtractor.JapeRhsProcessor;
+}
+
+
+
+Phase: AorticRootDiameter
+Input: Token Anatomy Numeric Units Lookup VarSentence Split Categorical
+Options: control=Appelt negationGrouping=false
+
+Macro: CONTEXT
+(
+	{Anatomy,
+		Anatomy within {VarSentence.minorType == "aortic_root"},
+		Anatomy.minorType == "aortic_root"}
+	({Lookup.minorType == "conjunction"} | {Lookup.minorType == "preposition"} | {Token.string=="/"} | {Token.string==","})?
+)
+
+Macro: CONTEXT_OTHER_AORTA
+(
+	{Anatomy,
+		Anatomy within {VarSentence.minorType == "aortic_root"},
+		Anatomy.majorType == "aorta"}
+	({Lookup.minorType == "conjunction"} | {Lookup.minorType == "preposition"} | {Token.string=="/"} | {Token.string==","})?
+)
+
+Macro: FILTER
+(
+
+	{Token,
+		!Numeric, //force carry on
+		!Units.majorType == "length", //force carry on
+		!Anatomy.minorType != "aortic_root",
+		!Lookup.majorType == "height",
+		!Lookup.majorType == "body_surface_area",
+		!Lookup.majorType == "misc_echo_descriptor",
+		!Units.majorType == "length/length", 
+		!Units.majorType == "z_score", 
+		!Lookup.majorType == "quantity_change", 
+		Token within {VarSentence.minorType == "aortic_root"}}
+)
+
+Macro: VALUE
+(
+	{Numeric,
+		Numeric within {VarSentence.minorType == "aortic_root"}, 
+		Numeric.type == "double"} |
+	{Numeric,
+		Numeric within {VarSentence.minorType == "aortic_root"}, 
+		Numeric.type == "integer"}
+)
+
+Macro: UNITS
+(
+	{Units,
+		Units within {VarSentence.minorType == "aortic_root"},
+		Units.majorType == "length"}
+)
+
+/*
+ * Description:
+ * block general references to the proximal aorta followed by a more 
+ * specific reference to part of the proximal aorta BUT the value-context 
+ * is reversed such that the normal rules do not block it.
+ * e.g. 'aortic root non-dilated (33mm at Sov level)'
+ * e.g. 'non-dilated aortic root (33mm Sov level)'
+ */
+Rule: ao_root_blocker_1
+Priority: 101
+(	
+	( CONTEXT )
+	
+	({Categorical})[0,2]
+			
+	{Token.kind == "punctuation", Token.position == "startpunct"}
+
+	(
+		( VALUE )
+		( (UNITS)? )
+		( {Lookup.minorType == "preposition"} )?
+		( {Anatomy.majorType == "aorta"} )
+		( {Token} )[0,1]
+		( {Lookup.minorType == "conjunction"} | {Lookup.minorType == "preposition"} | {Token.string=="/"} | {Token.string==","} )?
+	)[0,3]
+			
+	{Token.kind == "punctuation", Token.position == "endpunct"}
+			
+):root_blocker
+-->
+:root_blocker.Blocked = {type = "ao_root_blocker"}
+
+/*
+ * Description:
+ * e.g. 'the root is dilated at 45mm at the Sov'
+ */
+Rule: ao_root_diam_1
+Priority:100
+(
+	( CONTEXT ):context	
+	
+	( FILTER )[0,10]
+	
+	( VALUE ):value
+			
+	( (UNITS)? ):unit
+			
+	({Token, 
+		!Lookup.minorType == "preposition", 
+		!Units} | {Split})
+	
+):ao_root_diam 
+--> 
+:ao_root_diam
+{
+	/* Creation of the processor object does an 'in-place' processing of the annotations found using the above rules.
+	 * Using the bindings, strings are extracted from the doc, processed/parsed, then inserted into the outputAS (output
+	 * annotation set).	
+	 */
+	JapeRhsProcessor processor = new JapeRhsProcessor("echocardiogram", "ao_root_diam", doc, bindings, outputAS);
+}
