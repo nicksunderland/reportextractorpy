@@ -68,6 +68,7 @@ class DataProcessing:
                                    "func": GetText("anat2"),
                                    "foo4": GetType("anat1"),
                                    "foo5": GetFeature("anat1", "major")})
+
         rule1 = Rule(pat1, action1)
         pampac1 = Pampac(rule1, skip="longest", select="first")
         pattern_annotator = PampacAnnotator(pampac1,
