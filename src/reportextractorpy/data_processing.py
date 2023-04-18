@@ -38,15 +38,13 @@ class DataProcessing:
         docs = pipeline.pipe(docs)
 
         for i, doc in enumerate(docs):
+            print(doc)
             allset = doc.annset()  # ([("", ["Anatomy", "Token"])])
-            defset = doc.anns([('', "Sentence")])
+            defset = doc.anns([("", ["Anatomy", "Token"])])
             custset = doc.annset(self.mode)
             print("Doc #" + str(i))
-            #print(doc)
             print("Allset:  " + str(allset))
-            print("Defset: " + str(defset))
-            # for t in defset:
-            #     print(t)
+            print("Defset:  " + str(defset))
             print("Custset: " + str(custset))
             break
 
@@ -97,7 +95,7 @@ class DataProcessing:
             spec.loader.exec_module(module)
             sys.modules['annotation_pattern'] = module
             PatternClass = getattr(module, 'Pattern')
-            pat_annotator = PatternClass().annotator()
+            pat_annotator = PatternClass(self.mode)
             annotators.append(pat_annotator)
         return annotators
 
@@ -130,45 +128,48 @@ class DataProcessing:
 
     @staticmethod
     def example_text():
-        return """Report:
- Left ventricle:
- The left ventricle is seen to contract uniformly well in systole.  No regional wall motion abnormalities are identified.
- No left ventricular dilatation.  Mild concentric left ventricular hypertrophy.
+        return """Text: this sov 3 cm"""
 
- Measurements:
- I V S 1.2 cm.  EDD 4.4 cm.  PW 1.2 cm.  ESD 3.1 cm.
- E A ratio 1.21.  E wave deceleration time 173 milliseconds.
- Septal E' 7 cm/sec.  Lateral E' 8 cm/sec.
- Septal S' 7 cm/sec.  Lateral S' to 9 cm/sec.
- E/E' 15.
- Septal MAPSE 12 mm.  Lateral MAPSE 14 mm.
 
- Mitral valve:
- Mobile mitral valve leaflets seen to open well.  No mitral stenosis no mitral regurgitation.
-
- Left atrium:
- The left atrium measures 35 cm2.
-
- Aortic valve:
- Trileaflet valve.  No aortic stenosis, AV V-max 1.3 metres per second.  No aortic regurgitation.
- Aortic root dimensions are within normal limits.
- sinus of valsalva 3cm.
- stj is 3cm.
- asc Ao. is 4cm.
- No coarctation.
-
- Right-sided structures:
- Right ventricle contracts well and is not dilated, TAPSE 23 mm.  The right atrium is not dilated.
- No measurable tricuspid regurgitation identified.
- Normal pulmonary valve Doppler profile.
- Normal appearance of the inferior vena cava with good compliance.
-
- Summary:
- Good left ventricular systolic function.
- Difficult to quantify diastolic function probably stage II with high left ventricular filling pressures.
- Mild concentric left ventricular hypertrophy.
- Moderate left atrial dilatation.
- No gross valvular lesion demonstrated."""
+ #        Report:
+ # Left ventricle:
+ # The left ventricle is seen to contract uniformly well in systole.  No regional wall motion abnormalities are identified.
+ # No left ventricular dilatation.  Mild concentric left ventricular hypertrophy.
+ #
+ # Measurements:
+ # I V S 1.2 cm.  EDD 4.4 cm.  PW 1.2 cm.  ESD 3.1 cm.
+ # E A ratio 1.21.  E wave deceleration time 173 milliseconds.
+ # Septal E' 7 cm/sec.  Lateral E' 8 cm/sec.
+ # Septal S' 7 cm/sec.  Lateral S' to 9 cm/sec.
+ # E/E' 15.
+ # Septal MAPSE 12 mm.  Lateral MAPSE 14 mm.
+ #
+ # Mitral valve:
+ # Mobile mitral valve leaflets seen to open well.  No mitral stenosis no mitral regurgitation.
+ #
+ # Left atrium:
+ # The left atrium measures 35 cm2.
+ #
+ # Aortic valve:
+ # Trileaflet valve.  No aortic stenosis, AV V-max 1.3 metres per second.  No aortic regurgitation.
+ # Aortic root dimensions are within normal limits.
+ # sinus of valsalva 3cm.
+ # stj is 3cm.
+ # asc Ao. is 4cm.
+ # No coarctation.
+ #
+ # Right-sided structures:
+ # Right ventricle contracts well and is not dilated, TAPSE 23 mm.  The right atrium is not dilated.
+ # No measurable tricuspid regurgitation identified.
+ # Normal pulmonary valve Doppler profile.
+ # Normal appearance of the inferior vena cava with good compliance.
+ #
+ # Summary:
+ # Good left ventricular systolic function.
+ # Difficult to quantify diastolic function probably stage II with high left ventricular filling pressures.
+ # Mild concentric left ventricular hypertrophy.
+ # Moderate left atrial dilatation.
+ # No gross valvular lesion demonstrated."""
 
     def __str__(self):
         return("-----------------------------------\n"
