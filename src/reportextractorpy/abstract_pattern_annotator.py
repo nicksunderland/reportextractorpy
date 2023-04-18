@@ -2,6 +2,11 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple
 from gatenlp.pam.pampac import PampacAnnotator, Pampac, Rule
 
+from gatenlp.pam.pampac import Ann, AnnAt, Or, And, Filter, Find, Lookahead, N, Seq, Text
+from gatenlp.pam.pampac import AddAnn, UpdateAnnFeatures
+from gatenlp.pam.pampac import GetAnn, GetEnd, GetFeature, GetFeatures, GetRegexGroup, GetStart, GetText, GetType
+from gatenlp.pam.matcher import isIn, IfNot, Nocase
+
 
 class AbstractPatternAnnotator(PampacAnnotator, ABC):
 
