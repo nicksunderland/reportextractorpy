@@ -1,16 +1,16 @@
-import re
-
 from gatenlp import Document
 from gatenlp.processing.pipeline import Pipeline
 from gatenlp.processing.gazetteer import StringGazetteer  # TokenGazetteer, StringRegexAnnotator
 from gatenlp.processing.tokenizer import NLTKTokenizer
 from nltk.tokenize import WordPunctTokenizer
 from typing import List
+import reportextractorpy.nlp_resources
 from reportextractorpy.utils import Utils
 from os import path
 from yaml import safe_load
 import pickle
 import sys
+from importlib import import_module
 from importlib.util import spec_from_file_location, module_from_spec
 from gatenlp.pam.pampac import PampacAnnotator
 
@@ -88,14 +88,11 @@ class DataProcessing:
         return NLTKTokenizer(nltk_tokenizer=sent_tokenizer, token_type="Sentence")
 
     def _gen_pattern_annotators(self) -> List[PampacAnnotator]:
+        pattern_modules = Utils.pattern_modules_list(self.mode)
         annotators = []
-        for fp in Utils.pattern_config_files(self.mode):
-            spec = spec_from_file_location("annotation_pattern", fp)
-            module = module_from_spec(spec)
-            spec.loader.exec_module(module)
-            sys.modules['annotation_pattern'] = module
-            PatternClass = getattr(module, 'Pattern')
-            pat_annotator = PatternClass(self.mode)
+        for module in pattern_modules:
+            pattern_class = getattr(import_module(module), "Pattern")
+            pat_annotator = pattern_class(self.mode)
             annotators.append(pat_annotator)
         return annotators
 

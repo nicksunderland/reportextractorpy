@@ -5,7 +5,7 @@ phases:
  # ALL PATHS MUST BE RELATIVE TO THE nlp_resources/annotation_patterns folder e.g.
  # general/numerical.py, or, echocardiogram/report_sections/report_sections.py
  general:
-#  - general/numerical.py
+#  - general.numerical
 #  - general/refine_gaz_annotations.py
 #  - general/imperial_measurements.py
 #  - general/misc_numeric_annotations.py
@@ -27,8 +27,8 @@ phases:
 #  - vessels/linear_measurements/aorta_diam_root_init
 #  - vessels/linear_measurements/aorta_root_blockers
 #  - vessels/linear_measurements/aorta_diam_base_grammars
-  - echocardiogram/vessels/linear_measurements/aorta_diam_sinus_of_valsalva.py
-#  - vessels/linear_measurements/aorta_diam_sinus_of_valsalva_init
+  - echocardiogram.vessels.linear_measurements.aorta_diam_sinus_of_valsalva
+#  - echocardiogram.vessels.linear_measurements.aorta_diam_sinus_of_valsalva_init
 #  - vessels/linear_measurements/aorta_diam_base_grammars
 #  - vessels/linear_measurements/aorta_diam_sinotubular_junction_init
 #  - vessels/linear_measurements/aorta_diam_base_grammars
