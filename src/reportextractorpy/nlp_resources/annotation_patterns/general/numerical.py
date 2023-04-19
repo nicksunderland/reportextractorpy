@@ -34,12 +34,6 @@ class Pattern(AbstractPatternAnnotator):
 
 
 #
-# Imports: {
-# 	import static gate.Utils.*;
-# 	import BHI.ReportExtractor.JapeRhsProcessor;
-# }
-#
-#
 # Phase: TagNumeric
 # Input: Token SpaceToken Split Lookup Units
 # Options: control=Appelt  negationGrouping=false

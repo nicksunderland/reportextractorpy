@@ -2,8 +2,10 @@ from os import path
 from yaml import safe_load
 import glob
 import importlib_resources
+from importlib import import_module
 from pkgutil import walk_packages
 import reportextractorpy.nlp_resources.annotation_patterns
+import reportextractorpy.nlp_resources.gazetteers
 
 
 class Utils:
@@ -17,13 +19,23 @@ class Utils:
         return str(importlib_resources.files("reportextractorpy").joinpath("nlp_resources"))
 
     @staticmethod
-    def gazetteer_config_files(mode: str) -> list:
-        if mode == "echocardiogram":
-            gaz_glob_pattern = path.join(Utils.nlp_resources_path(), "gazetteers", mode, "**", "*.yml")
-            return glob.glob(gaz_glob_pattern, recursive=True)
-        else:
-            print("error in gazetteer_config_files(mode: str) -> list:")
-            exit()
+    def parse_gazetteer_configs(mode: str) -> list:
+
+        return_list = []
+        for _, module, is_pkg in walk_packages(reportextractorpy.nlp_resources.gazetteers.__path__,
+                                               reportextractorpy.nlp_resources.gazetteers.__name__ + "."):
+            if not is_pkg:
+                if any(module.partition('reportextractorpy.nlp_resources.gazetteers.' + el)[1]
+                       for el in [mode, "general", "measurement_units"]):
+
+                    r = (getattr(import_module(module), "annot_type"),
+                         getattr(import_module(module), "annot_features"),
+                         getattr(import_module(module), "string_matches"),
+                         getattr(import_module(module), "regex_rules"))
+
+                    return_list.append(r)
+
+        return return_list
 
     @staticmethod
     def pattern_modules_list(mode: str) -> list:
@@ -51,7 +63,6 @@ class Utils:
 
             # Check that all the specified pattern modules actually exist in the package
             not_found_modules = [mod for mod in phase_modules if mod not in all_pattern_modules]
-            print(not_found_modules)
             if len(not_found_modules) > 0:
                 raise ModuleNotFoundError("""
                     One or more pattern modules not found.

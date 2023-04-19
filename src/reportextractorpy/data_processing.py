@@ -1,17 +1,20 @@
 from gatenlp import Document
 from gatenlp.processing.pipeline import Pipeline
-from gatenlp.processing.gazetteer import StringGazetteer  # TokenGazetteer, StringRegexAnnotator
+import reportextractorpy.nlp_resources.gazetteers
+from pkgutil import walk_packages
+from gatenlp.processing.gazetteer import StringGazetteer, StringRegexAnnotator  # TokenGazetteer
+from reportextractorpy.nlp_resources.tokenizer.custom_tokenizer import custom_tokenizer_rules
+from gatenlp.lang.en.gatetokenizers import default_tokenizer, default_tokenizer_rules
 from gatenlp.processing.tokenizer import NLTKTokenizer
-from nltk.tokenize import WordPunctTokenizer
+from nltk.tokenize import RegexpTokenizer
 from typing import List
-import reportextractorpy.nlp_resources
+from spacy.language import Language
+from numerizer import spacy_numerize
 from reportextractorpy.utils import Utils
 from os import path
 from yaml import safe_load
 import pickle
-import sys
 from importlib import import_module
-from importlib.util import spec_from_file_location, module_from_spec
 from gatenlp.pam.pampac import PampacAnnotator
 
 
@@ -19,20 +22,25 @@ class DataProcessing:
     def __init__(self, mode):
         self.mode = mode
         self.data_dict = self._gen_data_dict()
-        self.tokenizer = self._gen_tokenizer()
+        self.str_gazetter = self._gen_str_gazetteer()
+        self.regex_tokenizer = self._gen_regex_tokenizer()
         self.sent_tokenizer = self._gen_sent_tokenizer()
-        self.str_gaz_case_sens = self._gen_str_gazetteer(case_sens=True)
-        self.str_gaz_case_insens = self._gen_str_gazetteer(case_sens=False)
         self.pattern_annotators = self._gen_pattern_annotators()
+
         print(self)
+
+    @staticmethod
+    @Language.component("numerize")
+    def numerize(doc, labels='all', retokenize=True):
+        # https://spacy.io/api/attributes
+        return spacy_numerize(doc, labels, retokenize)
 
     def run(self):
         docs = [Document(self.example_text()), Document(self.example_text())]
 
-        pipeline = Pipeline(self.tokenizer,
+        pipeline = Pipeline(self.regex_tokenizer,
                             self.sent_tokenizer,
-                            self.str_gaz_case_sens,
-                            self.str_gaz_case_insens,
+                            self.str_gazetter,
                             *self.pattern_annotators)
 
         docs = pipeline.pipe(docs)
@@ -43,18 +51,15 @@ class DataProcessing:
             defset = doc.anns([("", ["Anatomy", "Token"])])
             custset = doc.annset(self.mode)
             print("Doc #" + str(i))
-            print("Allset:  " + str(allset))
+            print("Allset:  ")# + str(allset))
+            for a in allset:
+                print("\t'" + doc[a] + "' - " + str(a))
             print("Defset:  " + str(defset))
             print("Custset: " + str(custset))
             break
 
         #rep = Report("echocardiogram", "ID_100000", datetime(2000, 10, 10, 0, 0, 0), "some sample report text")
 
-    @staticmethod
-    def _gen_tokenizer() -> NLTKTokenizer:
-        return NLTKTokenizer(nltk_tokenizer=WordPunctTokenizer(),
-                             token_type="Token",
-                             space_token_type="Space")
 
     def _gen_sent_tokenizer(self) -> NLTKTokenizer:
         sent_tokenizer_fp = path.join(Utils.nlp_resources_path(),
@@ -75,16 +80,13 @@ class DataProcessing:
 
         # Add the extra sentence split info to the NLTK PunktSentenceTokenizer
         extra_abbreviations = set()
-        for fp in Utils.gazetteer_config_files(self.mode):
-            with open(fp) as f:
-                gaz_config = safe_load(f)
-                ci = gaz_config["string_gazetteer"]["case_insens_matches"]
-                cs = gaz_config["string_gazetteer"]["case_sens_matches"]
-                phrases = [item.rstrip(".") for sublist in [ci, cs] if sublist is not None
-                           for item in sublist if "." in item]
-                [extra_abbreviations.update(extract_recursive(phr)) for phr in phrases]
-        sent_tokenizer._params.abbrev_types.update(extra_abbreviations)
+        gazetteer_configs = Utils.parse_gazetteer_configs(self.mode)
+        for _, _, string_matches, _ in gazetteer_configs:
+            phrases = [item.rstrip(".") for item in string_matches if "." in item]
+            [extra_abbreviations.update(extract_recursive(phr)) for phr in phrases]
+            sent_tokenizer._params.abbrev_types.update(extra_abbreviations)
 
+        #return sent_tokenizer
         return NLTKTokenizer(nltk_tokenizer=sent_tokenizer, token_type="Sentence")
 
     def _gen_pattern_annotators(self) -> List[PampacAnnotator]:
@@ -97,25 +99,35 @@ class DataProcessing:
         return annotators
 
     def _gen_str_gazetteer(self, case_sens: bool = True) -> StringGazetteer:
-        if case_sens:
-            gazetteer = StringGazetteer(longest_only=True, ws_clean=True, map_chars=None)
-        else:
-            gazetteer = StringGazetteer(longest_only=True, ws_clean=True, map_chars="lower")
-        for fp in Utils.gazetteer_config_files(self.mode):
-            with open(fp) as f:
-                gaz_config = safe_load(f)
+        str_gazetteer = StringGazetteer(longest_only=True, ws_clean=True, map_chars="lower")
 
-                if case_sens:
-                    matches = gaz_config["string_gazetteer"]["case_sens_matches"]
-                else:
-                    matches = gaz_config["string_gazetteer"]["case_insens_matches"]
-
-                gazlist = [(m, None) for m in (matches if matches is not None else [])]
-                gazetteer.append(source=gazlist,
+        # Load the StringGazetteer
+        gazetteer_configs = Utils.parse_gazetteer_configs(self.mode)
+        for annot_type, features, string_matches, _ in gazetteer_configs:
+            gaz_list = [(m, None) for m in (string_matches if string_matches is not None else [])]
+            str_gazetteer.append(source=gaz_list,
                                  source_fmt="gazlist",
-                                 list_type=gaz_config["annot_type"],
-                                 list_features=gaz_config["annot_features"])
-        return gazetteer
+                                 list_type=annot_type,
+                                 list_features=features)
+        return str_gazetteer
+
+    def _gen_regex_tokenizer(self, case_sens: bool = True) -> StringRegexAnnotator:
+
+        regex_gazetteer = StringRegexAnnotator(source=custom_tokenizer_rules,
+                                               source_fmt="string",
+                                               select_rules="all",
+                                               skip_longest=True,
+                                               longest_only=True,
+                                               regex_module="regex")
+
+        # Load the StringRegexAnnotator
+        gazetteer_configs = Utils.parse_gazetteer_configs(self.mode)
+        for annot_type, features, string_matches, regex_rules in gazetteer_configs:
+            regex_gazetteer.append(source=regex_rules,
+                                   source_fmt="string",
+                                   list_features=features)
+        return regex_gazetteer
+
 
     def _gen_data_dict(self) -> dict:
         config_path = path.join(Utils.configs_path(), self.mode + ".yml")
@@ -125,7 +137,8 @@ class DataProcessing:
 
     @staticmethod
     def example_text():
-        return """Text: this sov 3 cm"""
+        return """A document sov 3.0 cm. sinus of valsalva. dog123. 5.6, 66.56, 1^5, 4e5"""
+
 
 
  #        Report:
