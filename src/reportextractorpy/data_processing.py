@@ -1,12 +1,8 @@
 from gatenlp import Document
 from gatenlp.processing.pipeline import Pipeline
-import reportextractorpy.nlp_resources.gazetteers
-from pkgutil import walk_packages
-from gatenlp.processing.gazetteer import StringGazetteer, StringRegexAnnotator  # TokenGazetteer
+from gatenlp.processing.gazetteer import StringGazetteer, StringRegexAnnotator
 from reportextractorpy.nlp_resources.tokenizer.custom_tokenizer import custom_tokenizer_rules
-from gatenlp.lang.en.gatetokenizers import default_tokenizer, default_tokenizer_rules
 from gatenlp.processing.tokenizer import NLTKTokenizer
-from nltk.tokenize import RegexpTokenizer
 from typing import List
 from spacy.language import Language
 from numerizer import spacy_numerize
@@ -58,9 +54,6 @@ class DataProcessing:
             print("Custset: " + str(custset))
             break
 
-        #rep = Report("echocardiogram", "ID_100000", datetime(2000, 10, 10, 0, 0, 0), "some sample report text")
-
-
     def _gen_sent_tokenizer(self) -> NLTKTokenizer:
         sent_tokenizer_fp = path.join(Utils.nlp_resources_path(),
                                       "tokenizer",
@@ -111,7 +104,7 @@ class DataProcessing:
                                  list_features=features)
         return str_gazetteer
 
-    def _gen_regex_tokenizer(self, case_sens: bool = True) -> StringRegexAnnotator:
+    def _gen_regex_tokenizer(self) -> StringRegexAnnotator:
 
         regex_gazetteer = StringRegexAnnotator(source=custom_tokenizer_rules,
                                                source_fmt="string",
@@ -127,7 +120,6 @@ class DataProcessing:
                                    source_fmt="string",
                                    list_features=features)
         return regex_gazetteer
-
 
     def _gen_data_dict(self) -> dict:
         config_path = path.join(Utils.configs_path(), self.mode + ".yml")
