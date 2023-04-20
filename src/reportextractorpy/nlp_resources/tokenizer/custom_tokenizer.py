@@ -28,7 +28,7 @@ custom_tokenizer_rules = r"""
 
 #numbers#
 // a number is any combination of digits - altered from default GATE rule
-|[+-]?(?:[0-9]*[.])?[0-9]+(?:[eE^][-+]?[0-9]+)?
+|(?:[0-9]*[.])?[0-9]+(?:[eE^][-+]?[0-9]+)?
 0 => Token kind="number", 
 
 |\p{No}+

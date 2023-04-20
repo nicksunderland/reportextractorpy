@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple
-from gatenlp.pam.pampac import PampacAnnotator, Pampac, Rule
+from gatenlp.pam.pampac import PampacAnnotator, Pampac, Rule, Result
 
 from gatenlp.pam.pampac import Ann, AnnAt, Or, And, Filter, Find, Lookahead, N, Seq, Text
 from gatenlp.pam.pampac import AddAnn, UpdateAnnFeatures
@@ -10,24 +10,45 @@ from gatenlp.pam.matcher import isIn, IfNot, Nocase
 
 class AbstractPatternAnnotator(PampacAnnotator, ABC):
     @abstractmethod
-    def __init__(self, **kwargs):
-        self._annotator_outset_name = kwargs["annotator_outset_name"]
-        self._rule_list = kwargs["rules"]
-        self._var_name = kwargs["var_name"]
-        self._included_annots = kwargs["included_annots"]
-        self._pampac_skip = kwargs["pampac_skip"]
-        self._pampac_select = kwargs["pampac_select"]
-        self.validator()
-        pampac = Pampac(*kwargs["rules"], skip=kwargs["pampac_skip"], select=kwargs["pampac_select"])
-        PampacAnnotator.__init__(self, pampac, annspec=kwargs["included_annots"], outset_name=kwargs["annotator_outset_name"])
+    def __init__(self,
+                 annotator_outset_name: str,
+                 rule_list: List[Rule],
+                 var_name: str,
+                 included_annots: str | Tuple[str, str] | List[Tuple[str, str|List[str]]],
+                 pampac_skip: str,
+                 pampac_select: str):
+
+        self._annotator_outset_name = annotator_outset_name
+        self._rule_list = rule_list
+        self._var_name = var_name
+        self._included_annots = included_annots
+        self._pampac_skip = pampac_skip
+        self._pampac_select = pampac_select
+
+        pampac = Pampac(*self._rule_list,
+                        skip=self._pampac_skip,
+                        select=self._pampac_select)
+
+        PampacAnnotator.__init__(self,
+                                 pampac,
+                                 annspec=self._included_annots,
+                                 outset_name=self._annotator_outset_name)
 
     @abstractmethod
     def gen_rule_list(self) -> List[Rule]:
         pass
 
-    def validator(self):
+    def validator(self, kwargs):
         # TODO: create this self.validator() function
         print("validating some stuff e.g.: " + self._pampac_select)
+
+        assert all([hasattr(self, "_annotator_outset_name"),
+                    hasattr(self, "_var_name"),
+                    hasattr(self, "_included_annots"),
+                    hasattr(self, "_pampac_skip"),
+                    hasattr(self, "_pampac_select"),
+                    hasattr(self, "_rule_list")])
+
         #included_annots(self, included_annots: str | List[str | Tuple[str, str] | Tuple[str, List[str]]])
         #rule_list: List[Rule]
         #var_name: str
@@ -38,21 +59,54 @@ class AbstractPatternAnnotator(PampacAnnotator, ABC):
     def append_rule(self, rule: Rule):
         self._rule_list.append(rule)
 
-    def action_v1v2unit_match(self, succ, context, location):
+    @staticmethod
+    def sub_match_result(result: Result, name: str):
+        try:
+            if len(result.matches4name(name)) == 1:
+                return result.matches4name(name)[0]
+            elif len(result.matches4name(name)) > 1:
+                raise IndexError
+            else:
+                return {}
+        except IndexError:
+            print("AbstractPatternAnnotator.sub_match_result() returned multiple sub-pattern matches."
+                  "Check the annotation pattern doesn't contain duplicate sub-match naming")
 
-        if succ.issuccess():
+    def action_v1v2unit_match(self, success, context, location):
+
+        if success.issuccess():
             print("action_v1v2unit_match")
-            succ.pprint()
+            success.pprint()
 
-            context_str = GetText(name="context", resultidx=0, matchidx=0)(succ, context, location)
-            value_str = GetText(name="value", resultidx=0, matchidx=0)(succ, context, location)
-            units_str = GetText(name="units", resultidx=0, matchidx=0)(succ, context, location)
+            m = {"context": None,
+                 "value": None,
+                 "value_1": None,
+                 "value_2": None,
+                 "units": None}
 
-            ann = AddAnn(type=self._var_name,
-                         features={"context": context_str,
-                                   "value": value_str,
-                                   "units": units_str,
-                                   "value_1": None,
-                                   "value_2": None})
-            ann(succ, context, location)
+            for match_result in success:
+                for sub_match_name, sub_match_str in m.items():
+                    if self.sub_match_result(match_result, sub_match_name):
+                        m[sub_match_name] = GetText(name=sub_match_name)(success, context, location)
+
+            if m["value"] is None and all([m["value_1"], m["value_2"]]):
+                try:
+                    av = (float(m["value_1"]) + float(m["value_2"])) * 0.5
+                    m["value"] = str(av)
+                except ValueError:
+                    print("""ValueError in action_v1v2unit_match():
+                             - value_str: {value_str}
+                             - value_1_str: {value_1_str}
+                             - value_2_str: {value_2_str}
+                             - context_str: {context_str}
+                             - units_str: {units_str}""".format(value_str=m["value"],
+                                                                value_1_str=m["value_1"],
+                                                                value_2_str=m["value_2"],
+                                                                context_str=m["context"],
+                                                                units_str=m["units"]))
+            else:
+                print("error in action_v1v2unit_match()")
+
+            ann = AddAnn(type=self._var_name, features=m)
+            ann(success, context, location)
 

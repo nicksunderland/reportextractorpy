@@ -41,17 +41,22 @@ class DataProcessing:
 
         docs = pipeline.pipe(docs)
 
+
+
         for i, doc in enumerate(docs):
             print(doc)
+            print("Matching:", [doc[a] for a in doc.annset()])
             allset = doc.annset()  # ([("", ["Anatomy", "Token"])])
-            defset = doc.anns([("", ["Anatomy", "Token"])])
+            defset = doc.anns([("", ["Anatomy", "Token", "Units"])])
             custset = doc.annset(self.mode)
             print("Doc #" + str(i))
             print("Allset:  ")# + str(allset))
             for a in allset:
-                print("\t'" + doc[a] + "' - " + str(a))
+                print("\t'" + str(a) + "' - " + doc[a])
             print("Defset:  " + str(defset))
-            print("Custset: " + str(custset))
+            print("Custset: ")
+            for a in custset:
+                print("\t'" + str(a) + "' - " + doc[a])
             break
 
     def _gen_sent_tokenizer(self) -> NLTKTokenizer:
@@ -129,7 +134,7 @@ class DataProcessing:
 
     @staticmethod
     def example_text():
-        return """A document sov 3.1 cm. sinus of valsalva. dog123. 5.6, 66.56, 1^5, 4e5"""
+        return """sov 3.1 cm. sov 3.5-4.5 cm. sov 3.5 4.5 cm. sinus of valsalva. dog123. 5.6, 66.56, 1^5, 4e5"""
 
 
 
