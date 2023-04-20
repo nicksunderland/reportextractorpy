@@ -1,6 +1,5 @@
 from os import path
 from yaml import safe_load
-import glob
 import importlib_resources
 from importlib import import_module
 from pkgutil import walk_packages
@@ -19,6 +18,10 @@ class Utils:
         return str(importlib_resources.files("reportextractorpy").joinpath("nlp_resources"))
 
     @staticmethod
+    def ui_resources_path() -> str:
+        return str(importlib_resources.files("reportextractorpy").joinpath("ui", "ui_resources"))
+
+    @staticmethod
     def parse_gazetteer_configs(mode: str) -> list:
 
         return_list = []
@@ -28,11 +31,8 @@ class Utils:
                 if any(module.partition('reportextractorpy.nlp_resources.gazetteers.' + el)[1]
                        for el in [mode, "general", "measurement_units"]):
 
-                    r = (getattr(import_module(module), "annot_type"),
-                         getattr(import_module(module), "annot_features"),
-                         getattr(import_module(module), "string_matches"),
-                         getattr(import_module(module), "regex_rules"))
-
+                    g = getattr(import_module(module), "Gazetteer")
+                    r = (g.annot_type, g.annot_features, g.string_matches, g.regex_rules)
                     return_list.append(r)
 
         return return_list

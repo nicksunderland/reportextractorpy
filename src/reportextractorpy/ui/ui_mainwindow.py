@@ -65,7 +65,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "ReportExtractorPy"))
         self.label.setText(_translate("MainWindow", "This is a text label"))
         self.pushButton.setText(_translate("MainWindow", "PushButton"))
         self.label_mode.setText(_translate("MainWindow", "Mode:"))

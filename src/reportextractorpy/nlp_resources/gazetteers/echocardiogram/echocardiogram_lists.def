@@ -17,12 +17,10 @@ cardiac_rhythm/sinus_rhythm.lst:cardiac_rhythm:sinus_rhythm:en
 cardiac_rhythm/heart_rate.lst:cardiac_rhythm:heart_rate:en
 cardiac_rhythm/ecg.lst:ecg:ecg:en
 left_ventricle/left_ventricular_outflow_tract.lst:left_ventricule:left_ventricular_outflow_tract:en:Anatomy
-vessels/aorta.lst:aorta:aorta:en:Anatomy
+
 vessels/aortic_root.lst:aorta:aortic_root:en:Anatomy
 vessels/aortic_annulus.lst:aorta:aortic_annulus:en:Anatomy
-vessels/aorta_sinus_of_valsalva.lst:aorta:sinus_of_valsalva:en:Anatomy
-vessels/aorta_sinotubular_junction.lst:aorta:sinotubular_junction:en:Anatomy
-vessels/aorta_ascending.lst:aorta:ascending_aorta:en:Anatomy
+
 vessels/aorta_descending.lst:aorta:descending_aorta:en:Anatomy
 vessels/aorta_abdominal.lst:aorta:abdominal_aorta:en:Anatomy
 vessels/aorta_arch.lst:aorta:aortic_arch:en:Anatomy

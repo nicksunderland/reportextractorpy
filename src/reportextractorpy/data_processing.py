@@ -129,7 +129,7 @@ class DataProcessing:
 
     @staticmethod
     def example_text():
-        return """A document sov 3.0 cm. sinus of valsalva. dog123. 5.6, 66.56, 1^5, 4e5"""
+        return """A document sov 3.1 cm. sinus of valsalva. dog123. 5.6, 66.56, 1^5, 4e5"""
 
 
 
