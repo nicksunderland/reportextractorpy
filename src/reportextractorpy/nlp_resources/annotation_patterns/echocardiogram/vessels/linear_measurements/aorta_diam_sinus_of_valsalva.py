@@ -20,7 +20,6 @@ class Pattern(AbstractPatternAnnotator):
             pampac_select="first")
 
     def gen_rule_list(self) -> List[Rule]:
-        #"""Text: this sov 3 cm"""
         rules = self.context_v1_unit_rules() + \
                 self.context_v1v2_unit_rules()
         return rules

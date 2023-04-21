@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 from gatenlp.pam.pampac import PampacAnnotator, Pampac, Rule, Result
-
 from gatenlp.pam.pampac import Ann, AnnAt, Or, And, Filter, Find, Lookahead, N, Seq, Text
 from gatenlp.pam.pampac import AddAnn, UpdateAnnFeatures
 from gatenlp.pam.pampac import GetAnn, GetEnd, GetFeature, GetFeatures, GetRegexGroup, GetStart, GetText, GetType
@@ -48,13 +47,6 @@ class AbstractPatternAnnotator(PampacAnnotator, ABC):
                     hasattr(self, "_pampac_skip"),
                     hasattr(self, "_pampac_select"),
                     hasattr(self, "_rule_list")])
-
-        #included_annots(self, included_annots: str | List[str | Tuple[str, str] | Tuple[str, List[str]]])
-        #rule_list: List[Rule]
-        #var_name: str
-        #pampac_skip: str
-        #pampac_select: str
-        #annotator_outset_name: str
 
     def append_rule(self, rule: Rule):
         self._rule_list.append(rule)
