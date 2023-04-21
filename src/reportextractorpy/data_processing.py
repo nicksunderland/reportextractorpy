@@ -15,6 +15,7 @@ from gatenlp.pam.pampac import PampacAnnotator
 
 class DataProcessing(QtCore.QObject):
     # signals
+    load_complete_signal = QtCore.pyqtSignal(int)  # int: number of docs loaded, or available to process
     processing_complete_signal = QtCore.pyqtSignal(Document)
 
     def __init__(self, mode):
@@ -25,39 +26,37 @@ class DataProcessing(QtCore.QObject):
         self.regex_tokenizer = self._gen_regex_tokenizer()
         self.sent_tokenizer = self._gen_sent_tokenizer()
         self.pattern_annotators = self._gen_pattern_annotators()
+        self.docs = []
         print(self)
 
-    def run(self):
-        docs = [Document(self.example_text()),
-                Document(self.example_text())]
+    def run(self, index: List[int] | str = "all"):
+        assert any([all(isinstance(x, int) for x in index), index == "all"])
 
         pipeline = Pipeline(self.regex_tokenizer,
                             self.sent_tokenizer,
                             self.str_gazetter,
                             *self.pattern_annotators)
 
-        docs = pipeline.pipe(docs)
+        if index == "all" or len(index) > 1:
+            print("TODO: separate run method for running all of the docs (and not emitting until the end)")
+            # TODO: separate run method for running all of the docs (and not emitting until the end)
+        else:
+            docs = [self.docs[i] for i in index]
+            doc = pipeline.pipe(docs)
+            d = next(doc)
+            self.processing_complete_signal.emit(d)
 
-        d = next(docs)
-        print(type(d))
-        self.processing_complete_signal.emit(d)
-        print("emitted")
-
-        # for i, doc in enumerate(docs):
-        #     print(doc)
-        #     print("Matching:", [doc[a] for a in doc.annset()])
-        #     allset = doc.annset()  # ([("", ["Anatomy", "Token"])])
-        #     defset = doc.anns([("", ["Anatomy", "Token", "Units"])])
-        #     custset = doc.annset(self.mode)
-        #     print("Doc #" + str(i))
-        #     print("Allset:  ")# + str(allset))
-        #     for a in allset:
-        #         print("\t'" + str(a) + "' - " + doc[a])
-        #     print("Defset:  " + str(defset))
-        #     print("Custset: ")
-        #     for a in custset:
-        #         print("\t'" + str(a) + "' - " + doc[a])
-        #    break
+    def load(self, input_str: str, option: str):
+        if option == "string":
+            self.docs = [Document(input_str)]
+        elif option == "csv":
+            # TODO: csv loading
+            pass
+        elif option == "dir":
+            # TODO: directory csv loading
+            pass
+        # int: number of docs loaded, or available to process
+        self.load_complete_signal.emit(len(self.docs))
 
     def _gen_sent_tokenizer(self) -> NLTKTokenizer:
         sent_tokenizer_fp = path.join(Utils.nlp_resources_path(),
@@ -131,10 +130,6 @@ class DataProcessing(QtCore.QObject):
         with open(config_path) as f:
             config = safe_load(f)
             return config
-
-    @staticmethod
-    def example_text():
-        return """sov 3.1 cm. sov 3.5-4.5 cm. sov 3.5 4.5 cm. sinus of valsalva. dog123. 5.6, 66.56, 1^5, 4e5"""
 
     def __str__(self):
         return("-----------------------------------\n"
