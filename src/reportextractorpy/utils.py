@@ -32,7 +32,7 @@ class Utils:
                        for el in [mode, "general", "measurement_units"]):
 
                     g = getattr(import_module(module), "Gazetteer")
-                    r = (g.annot_type, g.annot_features, g.string_matches, g.regex_rules)
+                    r = (g.annot_type, g.annot_features, g.formatted_regex_rules(g))
                     return_list.append(r)
 
         return return_list

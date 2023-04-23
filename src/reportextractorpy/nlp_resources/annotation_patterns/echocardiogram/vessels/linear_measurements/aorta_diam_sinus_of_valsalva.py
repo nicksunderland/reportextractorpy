@@ -15,7 +15,7 @@ class Pattern(AbstractPatternAnnotator):
             annotator_outset_name=mode,
             rule_list=self.gen_rule_list(),
             var_name="ao_sov",
-            included_annots=[("", ["Token", "Anatomy", "Units"])],
+            included_annots=[("", ["Token", "Anatomy", "Numeric", "Units"])],
             pampac_skip="longest",
             pampac_select="first")
 
@@ -27,7 +27,7 @@ class Pattern(AbstractPatternAnnotator):
     def context_v1_unit_rules(self) -> List[Rule]:
         patterns = [
             Seq(AnnAt(type="Anatomy", name="context"),
-                AnnAt(type="Token", name="value"),
+                AnnAt(type="Numeric", name="value"),
                 AnnAt(type="Units", name="units"))
         ]
         return [Rule(pat, self.action_v1v2unit_match) for pat in patterns]
@@ -35,9 +35,9 @@ class Pattern(AbstractPatternAnnotator):
     def context_v1v2_unit_rules(self) -> List[Rule]:
         patterns = [
             Seq(AnnAt(type="Anatomy", name="context"),
-                AnnAt(type="Token", features=dict(kind="number"), name="value_1"),
+                AnnAt(type="Numeric", features=dict(kind="number"), name="value_1"),
                 N(Text(text=re.compile(r'-(?:to-)?')), min=0, max=1),
-                AnnAt(type="Token", features=dict(kind="number"), name="value_2"),
+                AnnAt(type="Numeric", features=dict(kind="number"), name="value_2"),
                 AnnAt(type="Units", name="units"))
         ]
         return [Rule(pat, self.action_v1v2unit_match) for pat in patterns]

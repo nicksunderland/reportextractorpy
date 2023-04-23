@@ -24,7 +24,15 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.ui.plain_text_edit_input.setPlainText("sov 3.1 cm. sov 3.5-4.5 cm. sov 3.5 4.5 cm. sinus of valsalva. dog123. 5.6, 66.56, 1^5, 4e5")
+        self.ui.plain_text_edit_input.setPlainText("""
+        Report:
+        height 123cm.
+        height 5' 6"
+        weight 67kg
+        weight 5 stone 6 pounds
+        sov 3.1 cm. 
+        testing prox. asc. ao. 3.5-4.5 cm, some more sentence.
+        sov 3.5 4.5 cm. sinus of valsalva. dog123. 5.6, 66.56, 1^5, 4e5""")
 
         self.web_engine_view = QWebEngineView(self.ui.centralwidget)
         self.ui.html_widget_holder_layout.addWidget(self.web_engine_view)

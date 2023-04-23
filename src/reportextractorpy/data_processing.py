@@ -1,7 +1,9 @@
+import regex
 from gatenlp import Document
+from reportextractorpy.nlp_resources.tokenizer.sentence_tokenizer import SentenceTokenizer
+from reportextractorpy.nlp_resources.tokenizer.custom_tokenizer import CustomTokenizer #, modified_gate_tokenizer_rules
+from gatenlp.processing.gazetteer import StringRegexAnnotator
 from gatenlp.processing.pipeline import Pipeline
-from gatenlp.processing.gazetteer import StringGazetteer, StringRegexAnnotator
-from reportextractorpy.nlp_resources.tokenizer.custom_tokenizer import custom_tokenizer_rules
 from gatenlp.processing.tokenizer import NLTKTokenizer
 from PyQt5 import QtCore
 from typing import List
@@ -11,6 +13,8 @@ from yaml import safe_load
 import pickle
 from importlib import import_module
 from gatenlp.pam.pampac import PampacAnnotator
+import re
+import regex
 
 
 class DataProcessing(QtCore.QObject):
@@ -22,9 +26,9 @@ class DataProcessing(QtCore.QObject):
         QtCore.QObject.__init__(self)
         self.mode = mode
         self.data_dict = self._gen_data_dict()
-        self.str_gazetter = self._gen_str_gazetteer()
         self.regex_tokenizer = self._gen_regex_tokenizer()
-        self.sent_tokenizer = self._gen_sent_tokenizer()
+        self.sent_tokenizer = SentenceTokenizer()
+        self.regex_gazetteer = self._gen_regex_gazetteer()
         self.pattern_annotators = self._gen_pattern_annotators()
         self.docs = []
         print(self)
@@ -33,8 +37,8 @@ class DataProcessing(QtCore.QObject):
         assert any([all(isinstance(x, int) for x in index), index == "all"])
 
         pipeline = Pipeline(self.regex_tokenizer,
+                            self.regex_gazetteer,
                             self.sent_tokenizer,
-                            self.str_gazetter,
                             *self.pattern_annotators)
 
         if index == "all" or len(index) > 1:
@@ -58,34 +62,6 @@ class DataProcessing(QtCore.QObject):
         # int: number of docs loaded, or available to process
         self.load_complete_signal.emit(len(self.docs))
 
-    def _gen_sent_tokenizer(self) -> NLTKTokenizer:
-        sent_tokenizer_fp = path.join(Utils.nlp_resources_path(),
-                                      "tokenizer",
-                                      "nltk_punktsentencetokenizer_english.pickle")
-
-        # Load the pre-trained NLTK PunktSentenceTokenizer
-        with open(sent_tokenizer_fp, "rb") as resource_file:
-            sent_tokenizer = pickle.load(resource_file)
-
-        # Need to split phrase with multiple periods (and spaces) into constituent parts
-        def extract_recursive(s):
-            head, sep, tail = s.partition('. ')
-            if tail == "":
-                return [head.strip().rstrip(".")]
-            else:
-                return [head.strip()] + extract_recursive(tail.strip())
-
-        # Add the extra sentence split info to the NLTK PunktSentenceTokenizer
-        extra_abbreviations = set()
-        gazetteer_configs = Utils.parse_gazetteer_configs(self.mode)
-        for _, _, string_matches, _ in gazetteer_configs:
-            phrases = [item.rstrip(".") for item in string_matches if "." in item]
-            [extra_abbreviations.update(extract_recursive(phr)) for phr in phrases]
-            sent_tokenizer._params.abbrev_types.update(extra_abbreviations)
-
-        #return sent_tokenizer
-        return NLTKTokenizer(nltk_tokenizer=sent_tokenizer, token_type="Sentence")
-
     def _gen_pattern_annotators(self) -> List[PampacAnnotator]:
         pattern_modules = Utils.pattern_modules_list(self.mode)
         annotators = []
@@ -95,34 +71,29 @@ class DataProcessing(QtCore.QObject):
             annotators.append(pat_annotator)
         return annotators
 
-    def _gen_str_gazetteer(self, case_sens: bool = True) -> StringGazetteer:
-        str_gazetteer = StringGazetteer(longest_only=True, ws_clean=True, map_chars="lower")
-
-        # Load the StringGazetteer
-        gazetteer_configs = Utils.parse_gazetteer_configs(self.mode)
-        for annot_type, features, string_matches, _ in gazetteer_configs:
-            gaz_list = [(m, None) for m in (string_matches if string_matches is not None else [])]
-            str_gazetteer.append(source=gaz_list,
-                                 source_fmt="gazlist",
-                                 list_type=annot_type,
-                                 list_features=features)
-        return str_gazetteer
-
     def _gen_regex_tokenizer(self) -> StringRegexAnnotator:
+        cust_tok = CustomTokenizer()
+        tokenizer = StringRegexAnnotator(source=CustomTokenizer.formatted_regex_rules(cust_tok),
+                                         source_fmt="string",
+                                         select_rules="all",
+                                         longest_only=True,
+                                         skip_longest=True,
+                                         regex_module="regex")
+        return tokenizer
 
-        regex_gazetteer = StringRegexAnnotator(source=custom_tokenizer_rules,
+    def _gen_regex_gazetteer(self) -> StringRegexAnnotator:
+        regex_gazetteer = StringRegexAnnotator(source=None,
                                                source_fmt="string",
                                                select_rules="all",
-                                               skip_longest=True,
                                                longest_only=True,
+                                               skip_longest=True,
                                                regex_module="regex")
 
         # Load the StringRegexAnnotator
         gazetteer_configs = Utils.parse_gazetteer_configs(self.mode)
-        for annot_type, features, string_matches, regex_rules in gazetteer_configs:
-            regex_gazetteer.append(source=regex_rules,
-                                   source_fmt="string",
-                                   list_features=features)
+        for mod, f, regex_rules in gazetteer_configs:
+            regex_gazetteer.append(source=regex_rules, source_fmt="string")
+
         return regex_gazetteer
 
     def _gen_data_dict(self) -> dict:

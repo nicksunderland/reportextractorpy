@@ -13,7 +13,7 @@ class AbstractPatternAnnotator(PampacAnnotator, ABC):
                  annotator_outset_name: str,
                  rule_list: List[Rule],
                  var_name: str,
-                 included_annots: str | Tuple[str, str] | List[Tuple[str, str|List[str]]],
+                 included_annots: str | List[str | Tuple[str, str | List[str]]],
                  pampac_skip: str,
                  pampac_select: str):
 
@@ -28,6 +28,8 @@ class AbstractPatternAnnotator(PampacAnnotator, ABC):
                         skip=self._pampac_skip,
                         select=self._pampac_select)
 
+        self.validator()
+
         PampacAnnotator.__init__(self,
                                  pampac,
                                  annspec=self._included_annots,
@@ -37,22 +39,26 @@ class AbstractPatternAnnotator(PampacAnnotator, ABC):
     def gen_rule_list(self) -> List[Rule]:
         pass
 
-    def validator(self, kwargs):
+    def validator(self):
         # TODO: create this self.validator() function
         print("validating some stuff e.g.: " + self._pampac_select)
+        #
+        # for rule in self._rule_list:
+        #     print(rule.parser.parsers)
 
-        assert all([hasattr(self, "_annotator_outset_name"),
-                    hasattr(self, "_var_name"),
-                    hasattr(self, "_included_annots"),
-                    hasattr(self, "_pampac_skip"),
-                    hasattr(self, "_pampac_select"),
-                    hasattr(self, "_rule_list")])
+        # make sure that the annotations referred to in the rules all exist in _included_annots
+        # assert all([hasattr(self, "_annotator_outset_name"),
+        #             hasattr(self, "_var_name"),
+        #             hasattr(self, "_included_annots"),
+        #             hasattr(self, "_pampac_skip"),
+        #             hasattr(self, "_pampac_select"),
+        #             hasattr(self, "_rule_list")])
 
     def append_rule(self, rule: Rule):
         self._rule_list.append(rule)
 
     @staticmethod
-    def sub_match_result(result: Result, name: str):
+    def sub_match_result(result: Result, name: str) -> str | dict:
         try:
             if len(result.matches4name(name)) == 1:
                 return result.matches4name(name)[0]
@@ -67,8 +73,7 @@ class AbstractPatternAnnotator(PampacAnnotator, ABC):
     def action_v1v2unit_match(self, success, context, location):
 
         if success.issuccess():
-            print("action_v1v2unit_match")
-            success.pprint()
+            #success.pprint()
 
             m = {"context": None,
                  "value": None,
@@ -76,9 +81,9 @@ class AbstractPatternAnnotator(PampacAnnotator, ABC):
                  "value_2": None,
                  "units": None}
 
-            for match_result in success:
-                for sub_match_name, sub_match_str in m.items():
-                    if self.sub_match_result(match_result, sub_match_name):
+            for match_result in success:  # gatenlp.pam.pampac.data - Result object in Success object
+                for sub_match_name, sub_match_str in m.items():  # iter the wanted features
+                    if self.sub_match_result(match_result, sub_match_name):  # Result dictionary not empty, get features
                         m[sub_match_name] = GetText(name=sub_match_name)(success, context, location)
 
             if m["value"] is None and all([m["value_1"], m["value_2"]]):
