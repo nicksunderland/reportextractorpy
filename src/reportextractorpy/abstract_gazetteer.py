@@ -51,20 +51,19 @@ class AbstractGazetteer(ABC):
                 else:
                     raise TypeError(rule)
 
+                # to extract the strings from the regex capture groups
+                # set a fature to "assign_to_group_X", where X is the
+                # group e.g. {"value": "assign_to_group_1"}, G1=group1
+                # of the regex
                 comb_regex = comb_regex + \
                              "|" + pattern.pattern + "\n" + \
                              "0 => " + annot_type + "  " + \
-                             ", ".join([k + "=\"" + v + "\"" for k, v in annot_features.items()]) + \
+                             ", ".join([k + "=G" + v.lstrip("assign_to_group_")
+                                        if "assign_to_group_" in v
+                                        else k + "=\"" + v + "\""
+                                        for k, v in annot_features.items()]) + \
                              "\n"
-
-                # gazetteer_configs = Utils.parse_gazetteer_configs(self.mode)
-                # print(gazetteer_configs)
-                # non_split = """
-                # |prox\. asc\. ao\.
-                # 0 => NonSplit"""
-                # non_split_tokenizer.append(source=non_split, source_fmt="string")
-
-
+                print(comb_regex)
             return comb_regex
 
         except TypeError as e:

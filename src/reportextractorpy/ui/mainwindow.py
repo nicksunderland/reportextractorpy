@@ -26,6 +26,12 @@ class MainWindow(QMainWindow):
 
         self.ui.plain_text_edit_input.setPlainText("""
         Report:
+        2020/10/10
+        3/4/2019
+        03/10
+        10-2020
+        34/40 weeks
+        1/4
         height 123cm.
         height 5' 6"
         weight 67kg

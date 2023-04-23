@@ -4,15 +4,17 @@ import re
 
 class Gazetteer(AbstractGazetteer):
     annot_type = "Units"
-    annot_features = {"major": "length/length",
-                      "minor": "m/m"}
+    annot_features = {"major": "volume/time",
+                      "minor": "ml/hr"}
     regex_rules = [
-        re.compile(r'(?<![a-z])(?:met[re]{2}s?|ms?)\s{0,2}'
+        re.compile(r'(?<![a-z])(?:m(?:illilit[re]{2})?s?|mls?)\s{0,2}'
                    r'(?:per|\/)\s{0,2}'
-                   r'(?:met[re]{2}|m)', flags=re.I)
+                   r'(?:h(?:ou)?r?)', flags=re.I)
     ]
     string_matches = [  # keep for testing regex
-        "m/m"
+        "ml/hr",
+        "ml / hr",
+        "ml/hour"
     ]
 
 

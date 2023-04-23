@@ -26,7 +26,7 @@ class Pattern(AbstractPatternAnnotator):
 
     def context_v1_unit_rules(self) -> List[Rule]:
         patterns = [
-            Seq(AnnAt(type="Anatomy", name="context"),
+            Seq(AnnAt(type="Anatomy", features=dict(minor="sinus_of_valsalva"), name="context"),
                 AnnAt(type="Numeric", name="value"),
                 AnnAt(type="Units", name="units"))
         ]
@@ -34,10 +34,10 @@ class Pattern(AbstractPatternAnnotator):
 
     def context_v1v2_unit_rules(self) -> List[Rule]:
         patterns = [
-            Seq(AnnAt(type="Anatomy", name="context"),
-                AnnAt(type="Numeric", features=dict(kind="number"), name="value_1"),
+            Seq(AnnAt(type="Anatomy", features=dict(minor="sinus_of_valsalva"), name="context"),
+                AnnAt(type="Numeric", name="value_1"),
                 N(Text(text=re.compile(r'-(?:to-)?')), min=0, max=1),
-                AnnAt(type="Numeric", features=dict(kind="number"), name="value_2"),
+                AnnAt(type="Numeric", name="value_2"),
                 AnnAt(type="Units", name="units"))
         ]
         return [Rule(pat, self.action_v1v2unit_match) for pat in patterns]

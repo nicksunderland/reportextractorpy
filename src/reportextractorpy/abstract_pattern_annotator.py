@@ -73,7 +73,6 @@ class AbstractPatternAnnotator(PampacAnnotator, ABC):
     def action_v1v2unit_match(self, success, context, location):
 
         if success.issuccess():
-            #success.pprint()
 
             m = {"context": None,
                  "value": None,
@@ -86,7 +85,12 @@ class AbstractPatternAnnotator(PampacAnnotator, ABC):
                     if self.sub_match_result(match_result, sub_match_name):  # Result dictionary not empty, get features
                         m[sub_match_name] = GetText(name=sub_match_name)(success, context, location)
 
-            if m["value"] is None and all([m["value_1"], m["value_2"]]):
+            if m["value"] is not None:
+
+                pass  # don't try to parse other values if we got one in the primary position
+
+            # deal with ranges and average them e.g. 3-4cm --> 3.5cm
+            elif m["value"] is None and all([m["value_1"], m["value_2"]]):
                 try:
                     av = (float(m["value_1"]) + float(m["value_2"])) * 0.5
                     m["value"] = str(av)
@@ -102,6 +106,7 @@ class AbstractPatternAnnotator(PampacAnnotator, ABC):
                                                                 context_str=m["context"],
                                                                 units_str=m["units"]))
             else:
+                # shouldn't get here
                 print("error in action_v1v2unit_match()")
 
             ann = AddAnn(type=self._var_name, features=m)
