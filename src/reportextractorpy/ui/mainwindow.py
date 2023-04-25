@@ -24,21 +24,45 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.ui.plain_text_edit_input.setPlainText("""
-        Report:
-        2020/10/10
-        3/4/2019
-        03/10
-        10-2020
-        34/40 weeks
-        1/4
-        height 123cm.
-        height 5' 6"
-        weight 67kg
-        weight 5 stone 6 pounds
-        sov 3.1 cm. 
-        testing prox. asc. ao. 3.5-4.5 cm, some more sentence.
-        sov 3.5 4.5 cm. sinus of valsalva. dog123. 5.6, 66.56, 1^5, 4e5""")
+        self.ui.plain_text_edit_input.setPlainText("""sov 3cm test. type 2 MI. sov 3-4cm^2 test. Thie is 1/4 of. This is 30 by 23mm""")
+
+        # 2020 / 10 / 10
+        # 3 / 4 / 2019
+        # 03 / 10
+        # 10 - 2020
+        # 34 / 40
+        # weeks
+        # 1 / 4
+        # height
+        # 123
+        # cm.
+        # height
+        # 5
+        # ' 6"
+        # weight
+        # 67
+        # kg
+        # weight
+        # 5
+        # stone
+        # 6
+        # pounds
+        # sov
+        # 3.1
+        # cm.
+        # testing
+        # prox.asc.ao.
+        # 3.5 - 4.5
+        # cm, some
+        # more
+        # sentence.
+        # sov
+        # 3.5
+        # 4.5
+        # cm.sinus
+        # of
+        # valsalva.dog123.
+        # 5.6, 66.56, 1 ^ 5, 4e5
 
         self.web_engine_view = QWebEngineView(self.ui.centralwidget)
         self.ui.html_widget_holder_layout.addWidget(self.web_engine_view)
