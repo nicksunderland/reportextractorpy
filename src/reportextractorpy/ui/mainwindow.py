@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.ui.plain_text_edit_input.setPlainText("""sov 3cm test. type 2 MI. sov 3-4cm^2 test. Thie is 1/4 of. This is 30 by 23mm""")
+        self.ui.plain_text_edit_input.setPlainText("""sov 3cm/m2 test. 11st. 6 feet 5. 8st. 7. 6 feet prox. asc. aorta tall. sov 3-4cm^2 test. Thie is 1/4 of. This is 30 by 23mm""")
 
         # 2020 / 10 / 10
         # 3 / 4 / 2019

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple
 
 import gatenlp
-from gatenlp.pam.pampac import PampacAnnotator, Pampac, Rule, Result, actions, Getter
+from gatenlp.pam.pampac import PampacAnnotator, Pampac, Rule, Result, actions, Getter, PampacParser, Success, Failure
 from gatenlp.pam.pampac import Ann, AnnAt, Or, And, Filter, Find, Lookahead, N, Seq, Text
 from gatenlp.pam.pampac import AddAnn, UpdateAnnFeatures, RemoveAnn
 from gatenlp.pam.pampac import GetAnn, GetEnd, GetFeature, GetFeatures, GetRegexGroup, GetStart, GetText, GetType
@@ -179,23 +179,80 @@ class GetNumberFromNumeric(Getter):
             # Single value group provided
             if any([self.name_1, self.name_2]) and not all([self.name_1, self.name_2]):
                 if self.name_1 is not None:
-                    return float(GetFeature(name=self.name_1, featurename="value").__call__(succ, context, location))
+                    return float(GetFeature(name=self.name_1,
+                                            featurename="value",
+                                            silent_fail=self.silent_fail).__call__(succ, context, location))
                 else:
-                    return float(GetFeature(name=self.name_2, featurename="value").__call__(succ, context, location))
+                    return float(GetFeature(name=self.name_2,
+                                            featurename="value",
+                                            silent_fail=self.silent_fail).__call__(succ, context, location))
 
             # Both value groups provided
             elif all([self.name_1, self.name_2]):
-                v1 = float(GetFeature(name=self.name_1, featurename="value").__call__(succ, context, location))
-                v2 = float(GetFeature(name=self.name_2, featurename="value").__call__(succ, context, location))
+                v1 = float(GetFeature(name=self.name_1,
+                                      featurename="value",
+                                      silent_fail=self.silent_fail).__call__(succ, context, location))
+                v2 = float(GetFeature(name=self.name_2,
+                                      featurename="value",
+                                      silent_fail=self.silent_fail).__call__(succ, context, location))
                 return float(self.func(v1, v2))
 
             # shouldn't get here
             else:
                 Exception("GetNumber(Getter) name parameter problem")
 
-        except ValueError as e:
+        except (ValueError, AttributeError) as e:
             if self.silent_fail:
-                return str(e)
-            else:
                 return None
+
+
+class CustomLookahead(PampacParser):
+    """
+    Copy of GATEs to fix minor bug, hopefully theyll fix it in the main repository
+    """
+
+    def __init__(self, parser, laparser, matchtype="first"):
+        """
+        Create a Lookahead parser.
+
+        Args:
+            parser: the parser for which to return a success or failure
+            laparser:  the parser that must match after the first parser, but it's success is discarded.
+            matchtype: which matches to include in the result, one of "first", "longest", "shortest", "all".
+        """
+        self.parser = parser
+        self.laparser = laparser
+        self.matchtype = matchtype
+
+    def parse(self, location, context):
+        ret = self.parser.parse(location, context)  #.issuccess() <- this bug
+        if ret.issuccess():
+            res = ret.result(self.matchtype)
+            if isinstance(res, list):
+                # we need to check each of the results
+                allres = []
+                for mtch_ in res:
+                    newlocation = mtch_.location
+                    laret = self.laparser.parse(newlocation, context)
+                    if laret.issuccess():
+                        allres = []
+                if len(allres) > 0:
+                    return Success(results=allres, context=context)
+                else:
+                    return Failure(
+                        context=context,
+                        message="Lookahead failed for all results",
+                        location=location,
+                    )
+            else:
+                newlocation = res.location
+                laret = self.laparser.parse(newlocation, context)
+                if laret.issuccess():
+                    return ret
+                else:
+                    return Failure(
+                        context=context, message="Lookahead failed", location=location
+                    )
+        else:
+            return ret
 

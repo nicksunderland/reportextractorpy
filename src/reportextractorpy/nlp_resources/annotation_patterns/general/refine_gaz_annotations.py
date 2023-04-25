@@ -21,155 +21,18 @@ class Pattern(AbstractPatternAnnotator):
 
     def gen_rule_list(self) -> List[Rule]:
         # Numeric annotations from within other Numeric annotations with a 'kind' other than 'raw_text'
-        pattern_1 = AnnAt(type="Numeric", name="remove_tag").within(type='Numeric', features=dict(kind=re.compile('^(?!raw_text$).*')))
+        numeric_in_numeric = AnnAt(type="Numeric", name="remove_tag").within(type='Numeric', features=dict(kind=re.compile('^(?!raw_text$).*')))
+
         # Numeric annotations from within other annotations type (except Numeric and sentences)
-        pattern_2 = AnnAt(type="Numeric", name="remove_tag").within(type=re.compile('^(?!Numeric$|Sentence).*'))
+        numeric_in_other = AnnAt(type="Numeric", name="remove_tag").within(type=re.compile('^(?!Numeric$|Sentence$).*'))
+
         # The remove action
-        action_1 = RemAnn(name="remove_tag")
+        action_remove = RemAnn(name="remove_tag")
 
-        return [Rule(pattern_1, action_1),
-                Rule(pattern_2, action_1)]
-
-
+        return [Rule(numeric_in_numeric, action_remove),
+                Rule(numeric_in_other, action_remove)]
 
 
-# Imports: {
-# 	import static gate.Utils.*;
-# 	import BHI.ReportExtractor.JapeRhsProcessor;
-# }
-#
-#
-# Phase: CleanUnits
-# Input: Units
-# Options: control=Appelt negationGrouping=false
-# /*
-#  * Description:
-#  * Here we remove units within units and assume that the large spanning annotation
-#  * is correct.
-#  * e.g. 'cm/m' may get tagged as 'cm', 'm', and 'cm/m' ==> just 'cm/m'
-#  */
-# Rule: clean_units
-# Priority: 100
-# (
-# 	{Units}
-# ):unit
-# -->
-# {
-# 	AnnotationSet thisUnitAnnot     = bindings.get("unit"); // this annotation above
-# 	AnnotationSet unitsOverlapping  = inputAS.get("Units", thisUnitAnnot.firstNode().getOffset(), thisUnitAnnot.lastNode().getOffset()); // any Units annotations that overlap
-# 	List<Annotation> annotsToRemove = new ArrayList<>(unitsOverlapping); // turn into a list
-# 	Comparator<Annotation> c = (a1, a2) -> Integer.signum((int) // create an comparator based on the length of the Unit annotations
-# 			((a1.getEndNode().getOffset() - a1.getStartNode().getOffset()) -
-# 			 (a2.getEndNode().getOffset() - a2.getStartNode().getOffset())));
-# 	annotsToRemove.sort(c.reversed()); // sort the list from longest Unit annotation to shortest
-# 	annotsToRemove.remove(0); // remove the longest annotation from the removals list (as we want to keep this)
-# 	inputAS.removeAll(annotsToRemove); // remove the rest from the input AnnotationSet
-# }
-#
-#
-#
-# Phase: CleanAnatomy
-# Input: Anatomy
-# Options: control=Appelt negationGrouping=false
-# /*
-#  * Description:
-#  * Here we remove anatomy within anatomy and assume that the larger spanning annotation
-#  * is correct.
-#  */
-# Rule: clean_anatomy
-# Priority: 100
-# (
-# 	{Anatomy}
-# ):anatomy
-# -->
-# {
-# 	AnnotationSet anatomyAnnots = bindings.get("anatomy");
-#
-# 	AnnotationSet anatomyWithin_1 = inputAS.get("Anatomy").getContained(
-# 			anatomyAnnots.firstNode().getOffset(),
-# 			anatomyAnnots.lastNode().getOffset()-1);
-# 	inputAS.removeAll(anatomyWithin_1);
-#
-# 	AnnotationSet anatomyWithin_2 = inputAS.get("Anatomy").getContained(
-# 			anatomyAnnots.firstNode().getOffset()+1,
-# 			anatomyAnnots.lastNode().getOffset());
-# 	inputAS.removeAll(anatomyWithin_2);
-#
-# 	AnnotationSet unitsWithinAnatomy = inputAS.get("Units").getContained(
-# 			anatomyAnnots.firstNode().getOffset(),
-# 			anatomyAnnots.lastNode().getOffset());
-# 	inputAS.removeAll(unitsWithinAnatomy);
-#
-# 	AnnotationSet categoricalWithin = inputAS.get("Categorical").getContained(
-# 			anatomyAnnots.firstNode().getOffset(),
-# 			anatomyAnnots.lastNode().getOffset());
-# 	inputAS.removeAll(categoricalWithin);
-# }
-#
-#
-#
-# Phase: CleanNumeric
-# Input: Numeric Units Token Split
-# Options: control=Appelt negationGrouping=false
-# /*
-#  * Description:
-#  * Here we retag split numeric values e.g. 1m 80cm ({Numeric}{Units}{Numeric}{Units}) becomes 1.8m {Numeric}{Units}
-#  * To keep it compatible with the Context:Numeric:Units matching we assign the 'value' feature of the metre annotation
-#  * to a combination of the metre and cm; then remove annots from the '80' and the 'cm' so they effectively get ignored.
-#  * is correct.
-#  */
-# Rule: split_metric_length
-# (
-# 	({Numeric}):metres
-# 	({Units.minorType == "m"})
-# 	({Numeric}):cm
-# 	({Units.minorType == "cm"})?
-#
-# ):split_metric
-# -->
-# :split_metric{
-#
-# 	String metres_str = stringFor(doc, bindings.get("metres"));
-# 	String cm_str     = bindings.get("cm")!=null ? stringFor(doc, bindings.get("cm")) : "0";
-# 	String value = null;
-# 	try {
-# 		Double metres = Double.parseDouble(metres_str);
-# 		Double cm     = Double.parseDouble(cm_str);
-# 		metres = metres + (cm / 100.0);
-# 		value = metres.toString();
-# 	}catch(Exception e) {
-# 		return;
-# 	}
-# 	FeatureMap newFeatures = Factory.newFeatureMap();
-# 	newFeatures.put("value", value);
-# 	newFeatures.put("type", "split_value");
-# 	outputAS.add(bindings.get("metres").firstNode(),bindings.get("metres").lastNode(),"Numeric", newFeatures);
-#
-#
-# 	// Since now the data lives in the new Numeric annotation's feature, we can clean up and remove the Numeric / Units annots
-# 	AnnotationSet splitMetricAnnot = bindings.get("split_metric");
-#
-# 	FeatureMap fm_double = Factory.newFeatureMap();
-# 	fm_double.put("type", "double");
-# 	AnnotationSet doubleWithin = inputAS.get("Numeric", fm_double).getContained(
-# 			splitMetricAnnot.firstNode().getOffset(),
-# 			splitMetricAnnot.lastNode().getOffset());
-# 	inputAS.removeAll(doubleWithin);
-#
-# 	FeatureMap fm_integer = Factory.newFeatureMap();
-# 	fm_integer.put("type", "integer");
-# 	AnnotationSet integerWithin = inputAS.get("Numeric", fm_integer).getContained(
-# 			splitMetricAnnot.firstNode().getOffset(),
-# 			splitMetricAnnot.lastNode().getOffset());
-# 	inputAS.removeAll(integerWithin);
-#
-# 	FeatureMap fm_cm = Factory.newFeatureMap();
-# 	fm_cm.put("minorType", "cm");
-# 	AnnotationSet cmUnitsWithin = inputAS.get("Units", fm_cm).getContained(
-# 			splitMetricAnnot.firstNode().getOffset(),
-# 			splitMetricAnnot.lastNode().getOffset());
-# 	inputAS.removeAll(cmUnitsWithin);
-# }
 #
 # Phase: CleanCategorical
 # Input: Categorical

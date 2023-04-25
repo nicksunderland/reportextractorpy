@@ -23,28 +23,12 @@ class Pattern(AbstractPatternAnnotator):
     def gen_rule_list(self) -> List[Rule]:
         pattern_1 = Seq(AnnAt(type="Anatomy", features=dict(minor="sinus_of_valsalva"), name="context"),
                         AnnAt(type="Numeric", name="value"),
-                        AnnAt(type="Units", name="units"))
+                        AnnAt(type="Units", features=dict(major="length"), name="units"))
 
         action_1 = AddAnn(type=self.var_name, features={"context": GetText(name="context"),
                                                         "value": GetNumberFromNumeric(name_1="value"),
-                                                        "units": GetText(name="units")})
+                                                        "units": GetText(name="units", silent_fail=True)})
 
-        pattern_2 = Seq(
-            AnnAt(type="Anatomy", features=dict(minor="sinus_of_valsalva"), name="context"),
-            AnnAt(type="Numeric", name="value_1"),
-            N(Text(text=re.compile(r'-(?:to-)?')), min=0, max=1),
-        #
-        #     ({Token.string == ~ "(?i)[-]|(to)"})
-        # # 		({SpaceToken}{Token.string ==~ "(?i)a"})?
-        # # 			({SpaceToken}{Token.string ==~ "(?i)(max)|(min)"})?
-        #
-        #
-            AnnAt(type="Numeric", name="value_2"),
-            AnnAt(type="Units", name="units"), name=self.var_name)
-        #
-        action_2 = AddAnn(type=self.var_name, features={"context": GetText(name="context"),
-                                                        "value": GetNumberFromNumeric(name_1="value_1", name_2="value_2"),
-                                                        "units": GetText(name="units")})
+        # need to submit bug report for silent failing of GetText(name="units", silent_fail=True)
 
-        return [Rule(pattern_1, action_1),
-                Rule(pattern_2, action_2)]
+        return [Rule(pattern_1, action_1)]
