@@ -7,7 +7,7 @@ class Gazetteer(AbstractGazetteer):
     annot_features = {"major": "area",
                       "minor": "m2"}
     regex_rules = [
-        re.compile(r'(?:met[re]{2}s?|m)\s{0,2}(?:squared|sq)?[2_^.\u00B2]{0,2}', flags=re.I),
+        re.compile(r'(?<!centi)(?:met[re]{2}s?|(?<![cm])m(?!m))\s{0,2}(?:(?:squared|sqr?d?)|[2_^\u00B2]{1,2})', flags=re.I),
     ]
     string_matches = [  # keep for testing regex
         "m2"
