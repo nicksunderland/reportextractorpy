@@ -88,9 +88,10 @@ class DataProcessing(QtCore.QObject):
         pattern_modules = Utils.pattern_modules_list(self.mode)
         pattern_annotators = []
         for module in pattern_modules:
-            pattern_class = getattr(import_module(module), "Pattern")
-            pat_annotator = pattern_class(self.mode)
-            pattern_annotators.append(pat_annotator)
+            pattern_module = getattr(import_module(module), "Pattern")
+            print("IMPORT PATTERN MODULE:" + " " + module)
+            for annotator in pattern_module():
+                pattern_annotators.append(annotator)
 
         return Pipeline(tokenizer,
                         regex_gazetteer,

@@ -1,6 +1,6 @@
 from reportextractorpy.abstract_pattern_annotator import AbstractPatternAnnotator
 from reportextractorpy.custom_rule_actions import GetNumberFromNumeric
-from gatenlp.pam.pampac import Rule, pampac_parsers
+from gatenlp.pam.pampac import Rule
 from gatenlp.pam.pampac import Ann, AnnAt, Or, And, Filter, Find, Lookahead, N, Seq, Text
 from gatenlp.pam.pampac import AddAnn, RemoveAnn, UpdateAnnFeatures
 from gatenlp.pam.pampac import GetAnn, GetEnd, GetFeature, GetFeatures, GetRegexGroup, GetStart, GetText, GetType
@@ -11,18 +11,22 @@ import re
 
 class Pattern(AbstractPatternAnnotator):
 
-    def __init__(self, mode: str, ):
-
-        self.annotator_outset_name = mode
-        self.var_name = "ao_sov"
+    def __init__(self):
+        self.var_name = NotImplemented
+        self.descriptor = NotImplemented
+        self.templates = [{"var_name": "ao_sov",      "descriptor": "sinus_of_valsalva"},
+                          {"var_name": "ao_stj_diam", "descriptor": "sinotubular_junction"},
+                          {"var_name": "ao_asc_diam", "descriptor": "ascending_aorta"}]
+        self.outset_name = "echocardiogram"
         self.included_annots = [("", ["Token", "Anatomy", "Numeric", "Units"])]
         self.pampac_skip = "longest"
         self.pampac_select = "first"
         self.rule_list = self.gen_rule_list()
-        super().__init__(**self.__dict__)
+        AbstractPatternAnnotator.__init__(self, **self.__dict__)
 
     def gen_rule_list(self) -> List[Rule]:
-        pattern_1 = Seq(AnnAt(type="Anatomy", features=dict(minor="sinus_of_valsalva"), name="context"),
+
+        pattern_1 = Seq(AnnAt(type="Anatomy", features=dict(minor=self.descriptor), name="context"),
                         AnnAt(type="Numeric", name="value"),
                         AnnAt(type="Units", features=dict(major="length"), name="units"))
 
@@ -30,6 +34,8 @@ class Pattern(AbstractPatternAnnotator):
                                                         "value": GetNumberFromNumeric(name_1="value"),
                                                         "units": GetText(name="units", silent_fail=True)})
 
-        # need to submit bug report for silent failing of GetText(name="units", silent_fail=True)
+        rule_list = [
+            Rule(pattern_1, action_1)
+        ]
 
-        return [Rule(pattern_1, action_1)]
+        return rule_list

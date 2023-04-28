@@ -1,4 +1,5 @@
-from reportextractorpy.abstract_pattern_annotator import AbstractPatternAnnotator, GetNumberFromText, RemAnn
+from reportextractorpy.abstract_pattern_annotator import AbstractPatternAnnotator
+from reportextractorpy.custom_rule_actions import RemAnn
 from gatenlp.pam.pampac import Rule, pampac_parsers
 from gatenlp.pam.pampac import Ann, AnnAt, Or, And, Filter, Find, Lookahead, N, Seq, Text
 from gatenlp.pam.pampac import AddAnn, RemoveAnn, UpdateAnnFeatures
@@ -10,16 +11,17 @@ import re
 
 class Pattern(AbstractPatternAnnotator):
 
-    def __init__(self, mode: str):
-        self.annotator_outset_name = ""
+    def __init__(self):
         self.var_name = ""
+        self.outset_name = ""
         self.included_annots = [("", ["Numeric", "Units"])]
         self.pampac_skip = "longest"
         self.pampac_select = "first"
         self.rule_list = self.gen_rule_list()
-        super().__init__(**self.__dict__)
+        AbstractPatternAnnotator.__init__(self, **self.__dict__)
 
     def gen_rule_list(self) -> List[Rule]:
+
         # Numeric annotations from within other Numeric annotations with a 'kind' other than 'raw_text'
         numeric_in_numeric = AnnAt(type="Numeric", name="remove_tag").within(type='Numeric', features=dict(kind=re.compile('^(?!raw_text$).*')))
 
@@ -29,9 +31,10 @@ class Pattern(AbstractPatternAnnotator):
         # The remove action
         action_remove = RemAnn(name="remove_tag")
 
-        return [Rule(numeric_in_numeric, action_remove),
-                Rule(numeric_in_other, action_remove)]
+        rule_list = [Rule(numeric_in_numeric, action_remove),
+                     Rule(numeric_in_other, action_remove)]
 
+        return rule_list
 
 #
 # Phase: CleanCategorical

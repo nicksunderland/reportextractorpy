@@ -1,8 +1,7 @@
-from reportextractorpy.abstract_pattern_annotator import AbstractPatternAnnotator, \
-    GetNumberFromText, GetNumberFromNumeric
+from reportextractorpy.abstract_pattern_annotator import AbstractPatternAnnotator
+from reportextractorpy.custom_rule_actions import GetNumberFromNumeric
 from gatenlp.pam.pampac import Rule
 from gatenlp.pam.pampac import AnnAt, Seq, Text, N, Lookahead
-from reportextractorpy.abstract_pattern_annotator import CustomLookahead
 from gatenlp.pam.pampac import AddAnn
 from typing import List
 import re
@@ -10,16 +9,17 @@ import re
 
 class Pattern(AbstractPatternAnnotator):
 
-    def __init__(self, mode: str):
-        self.annotator_outset_name = ""
+    def __init__(self):
         self.var_name = ""
+        self.outset_name = ""
         self.included_annots = [("", ["Numeric", "Token", "Units"])]
         self.pampac_skip = "longest"
         self.pampac_select = "first"
         self.rule_list = self.gen_rule_list()
-        super().__init__(**self.__dict__)
+        AbstractPatternAnnotator.__init__(self, **self.__dict__)
 
     def gen_rule_list(self) -> List[Rule]:
+
         # measurements in feet and inches (allowing a token inbetween, e.g. comma or fullstop)
         # optional inches units
         pattern_1 = Seq(AnnAt(type="Numeric", name="value_1"),
@@ -46,7 +46,7 @@ class Pattern(AbstractPatternAnnotator):
 
         # measurements in stone and pounds (allowing a token inbetween, e.g. comma or fullstop)
         # optional pounds units
-        pattern_3 = CustomLookahead(parser=Seq(AnnAt(type="Numeric", name="value_1"),
+        pattern_3 = Lookahead(parser=Seq(AnnAt(type="Numeric", name="value_1"),
                                          AnnAt(type="Units", features=dict(minor="stone")),
                                         N(Text(text=re.compile('\s{0,2}[&,.]|(and)\s{0,2}', flags=re.I)), min=0, max=1)),
                             laparser= AnnAt(type="Numeric", name="value_2"))\
@@ -69,10 +69,12 @@ class Pattern(AbstractPatternAnnotator):
                                                                 "inches": GetNumberFromNumeric(name_2="value_2")})
         # measurements in feet and inches (allowing a token inbetween, e.g. comma or fullstop)
 
-        return [Rule(pattern_1, action_1),
-                Rule(pattern_2, action_2),
-                Rule(pattern_3, action_3),
-                Rule(pattern_4, action_4)]
+        rule_list = [Rule(pattern_1, action_1),
+                     Rule(pattern_2, action_2),
+                     Rule(pattern_3, action_3),
+                     Rule(pattern_4, action_4)]
+
+        return rule_list
 
 #
 # Phase: TagImperialWeight

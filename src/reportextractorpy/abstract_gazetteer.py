@@ -63,7 +63,6 @@ class AbstractGazetteer(ABC):
                                         else k + "=\"" + v + "\""
                                         for k, v in annot_features.items()]) + \
                              "\n"
-                print(comb_regex)
             return comb_regex
 
         except TypeError as e:
