@@ -30,7 +30,7 @@ class Pattern(AbstractPatternAnnotator):
                         AnnAt(type="Units", features=FeatureMatcher(minor="feet")),
                         # Optional sequence of joining phrase (optional) & numeric, followed by an optional inches
                         # unit (lookahead to check units aren't related to mass first before capturing)
-                        Seq(Lookahead(parser=Seq(Text(text=re.compile('\s{0,2}(?:[&,.]|(and))\s{0,2}', flags=re.I)).repeat(0, 1),
+                        Seq(Lookahead(parser=Seq(AnnAt(features=FeatureMatcher(text=re.compile('[&,.]|and', flags=re.I))).repeat(0, 1),
                                                  AnnAt(type="Numeric", name="value_2")),
                                       laparser=AnnAt().notoverlapping(type="Units", features=FeatureMatcher(major="mass"))),
                             AnnAt(type="Units", features=FeatureMatcher(minor="inches")).repeat(0, 1)).repeat(0, 1))

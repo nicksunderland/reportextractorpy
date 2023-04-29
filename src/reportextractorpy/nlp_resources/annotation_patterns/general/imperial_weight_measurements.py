@@ -30,7 +30,7 @@ class Pattern(AbstractPatternAnnotator):
                         AnnAt(type="Units", features=FeatureMatcher(minor="stone")),
                         # Optional sequence of joining phrase (optional) & numeric, followed by an optional pounds
                         # unit (lookahead to check units aren't related to length first before capturing)
-                        Seq(Lookahead(parser=Seq(Text(text=re.compile('\s{0,2}(?:[&,.]|(and))\s{0,2}', flags=re.I)).repeat(0, 1),
+                        Seq(Lookahead(parser=Seq(AnnAt(features=FeatureMatcher(text=re.compile('[&,.]|and', flags=re.I))).repeat(0, 1),
                                                  AnnAt(type="Numeric", name="value_2")),
                                       laparser=AnnAt().notoverlapping(type="Units", features=FeatureMatcher(major="length"))),
                             AnnAt(type="Units", features=FeatureMatcher(minor="pounds")).repeat(0, 1)).repeat(0, 1))
@@ -57,6 +57,21 @@ class Pattern(AbstractPatternAnnotator):
         action_3 = AddAnn(type="ImperialMeasurement", features={"major": "mass",
                                                                 "stone": GetNumberFromNumeric(name_1="value_1", silent_fail=True),
                                                                 "pounds": GetNumberFromNumeric(name_2="value_2")})
+
+        # TODO: other
+        """
+        /*
+         * Description:
+         * Tag imperial measurements in stone +/- pounds
+         */
+        Rule: imperial_weight_1
+        (
+            (({Numeric}{Units.minorType == "stone"} | {Token.string ==~ "1{1,2}st"})):stone //need to deal with the fact that 11st is captured as the string '11st' not two strings '11' 'st' 
+            (({Numeric})?):pounds
+            ({Units.minorType == "pounds"})?
+        
+        ):imperial_weight
+        """
 
         rule_list = [Rule(pattern_1, action_1),
                      Rule(pattern_2, action_2),

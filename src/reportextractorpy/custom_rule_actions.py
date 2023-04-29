@@ -1,5 +1,7 @@
 from gatenlp.pam.pampac import actions, Getter
 from gatenlp.pam.pampac import GetFeature
+from gatenlp.pam.pampac.actions import _get_match
+from typing import List
 
 
 class GetNumberFromText(Getter):
@@ -113,3 +115,115 @@ class GetNumberFromNumeric(Getter):
         except (ValueError, AttributeError) as e:
             if self.silent_fail:
                 return None
+
+
+class GetList(Getter):
+    """
+    Helper to return a list of matches which may come from multiple named capture groups.
+    """
+    def __init__(self,
+                 name=None,
+                 silent_fail=False):
+        assert name is not None
+        self.name = name
+        self.silent_fail = silent_fail
+
+    def __call__(self, succ, context=None, location=None):
+
+        text_to_return = []
+
+        for i, r in enumerate(succ._results):
+            for match in r.matches4name(self.name):
+                span = match.get("span")
+                text = context.doc[span]
+                text_to_return.append(text)
+
+        if not text_to_return:
+            if self.silent_fail:
+                return []
+            else:
+                raise Exception(
+                    f"Could not find annotations of name: {self.name}"
+                )
+
+        return text_to_return
+
+
+class RemoveAnnAll:
+    """
+    Action for removing annotations.
+    """
+
+    def __init__(self,
+                 name: str | List[str] = None,
+                 type: str | List[str] = None,
+                 annset_name: str = None,
+                 silent_fail: bool = True):
+        """
+        Create a remove all annotation action.
+        Args:
+            name: the name, or list of names, of a match(es) from which to get the annotation to remove
+            type: the annotation type, or list of types, of annotation within the whole matched pattern to remove
+            annset_name: the name of the annotation set to remove the annotation from. If this is the same set
+                as used for matching it may influence the matching result if the annotation is removed before
+                the remaining matching is done.
+                If this is not specified, the annotation set of the (first) input annotation is used.
+            silent_fail: if True, silently ignore the error of no annotation to get removed
+        """
+        assert any([name, type]), \
+            f"either name and/or type should be provided [name: {name}, type: {type}]"
+
+        if name is not None:
+            assert all(isinstance(c, str) for c in name), \
+                f"name must be a string or list of strings but is {name}"
+            if isinstance(name, list):
+                self.name = name
+            else:
+                self.name = [name]
+        else:
+            self.name = None
+
+        if type is not None:
+            assert all(isinstance(c, str) for c in type), \
+                f"type must be a string or list of strings but is {type}"
+            if isinstance(type, list):
+                self.type = type
+            else:
+                self.type = [type]
+        else:
+            self.type = None
+
+        assert annset_name is None or isinstance(annset_name, str), \
+            f"annset_name must be a string or None but is {annset_name}"
+        self.annset_name = annset_name
+        self.silent_fail = silent_fail
+
+    def __call__(self, succ, context=None, location=None, annset=None):
+
+        anns_to_remove = []
+
+        for i, r in enumerate(succ._results):
+
+            if self.type is not None:
+                for ann in r.anns4matches():
+                    if ann.type in self.type:
+                        anns_to_remove.append(ann)
+
+            if self.name is not None:
+                for name in self.name:
+                    for match in r.matches4name(name):
+                        ann = match.get("ann")
+                        anns_to_remove.append(ann)
+
+        if not anns_to_remove:
+            if self.silent_fail:
+                return
+            else:
+                raise Exception(
+                    f"Could not find annotations of type: {self.type} and / or of name: {self.name}"
+                )
+
+        if self.annset_name is not None:
+            annset = context.doc.annset(self.annset_name)
+
+        [annset.remove(ann) for ann in anns_to_remove if ann is not None]

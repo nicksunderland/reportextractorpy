@@ -8,7 +8,7 @@ class CustomTokenizer(AbstractGazetteer):
         self.annot_type = "Token"
         self.annot_features = {"kind": "word"}
         self.regex_rules = [
-            regex.compile(r'(?:\p{L}(?:\p{Mn})*)(?:(?:\p{Ll}(?:\p{Mn})*)|\p{Pd}|\p{Cf})*', flags=regex.I),
+            (regex.compile(r'((?:\p{L}(?:\p{Mn})*)(?:(?:\p{Ll}(?:\p{Mn})*)|\p{Pd}|\p{Cf})*)', flags=regex.I), "Token", {"text": "assign_to_group_1"}),
             (re.compile(r'(?<!\d)(19|20\d\d)([- \/.])(0?[1-9]|1[012])\2(0?[1-9]|[12][0-9]|3[01])(?!\d)'), "Date", {"year": "assign_to_group_1", "month": "assign_to_group_3", "day": "assign_to_group_4"}),
             (re.compile(r'(?<!\d)(0?[1-9]|[12][0-9]|3[01])([- \/.])(0?[1-9]|1[012])\2(19|20\d\d)(?!\d)'), "Date", {"year": "assign_to_group_4", "month": "assign_to_group_3", "day": "assign_to_group_1"}),
             (re.compile(r'(?<!\d)(0[1-9]|[12][0-9]|3[01])[- \/.](0[1-9]|1[012])(?!\d)'), "Date", {"month": "assign_to_group_2", "day": "assign_to_group_1"}),
@@ -19,12 +19,12 @@ class CustomTokenizer(AbstractGazetteer):
             (re.compile(r'((?:[0-9]*[.])?[0-9]+(?:[eE^][-+]?[0-9]+)?)'), "Numeric", {"value": "assign_to_group_1", "kind": "raw_text"}),
             (regex.compile(r'(?:\p{Zs})'), "SpaceToken", {"kind": "space"}),
             (regex.compile(r'(?:\p{Cc})'), "SpaceToken", {"kind": "control"}),
-            (regex.compile(r'(?:\p{Sk}|\p{Sm}|\p{So})'), "Token", {"kind": "symbol"}),
-            (regex.compile(r'(?:\p{Sk}|\p{Sm}|\p{So})'), "Token", {"kind": "symbol", "symbolkind": "currency"}),
-            (regex.compile(r'(?:\p{Pd}|\p{Cf})'), "Token", {"kind": "punctuation", "subkind": "dashpunct"}),
-            (regex.compile(r'(?:\p{Pc}|\p{Po})'), "Token", {"kind": "punctuation"}),
-            (regex.compile(r'(?:\p{Ps}|\p{Pi})'), "Token", {"kind": "punctuation", "position": "startpunct"}),
-            (regex.compile(r'(?:\p{Pe}|\p{Pf})'), "Token", {"kind": "punctuation", "position": "endpunct"}),
+            (regex.compile(r'(\p{Sk}|\p{Sm}|\p{So})'), "Token", {"text": "assign_to_group_1", "kind": "symbol"}),
+            (regex.compile(r'(\p{Sk}|\p{Sm}|\p{So})'), "Token", {"text": "assign_to_group_1", "kind": "symbol", "symbolkind": "currency"}),
+            (regex.compile(r'(\p{Pd}|\p{Cf})'), "Token", {"text": "assign_to_group_1", "kind": "punctuation", "subkind": "dashpunct"}),
+            (regex.compile(r'(\p{Pc}|\p{Po})'), "Token", {"text": "assign_to_group_1", "kind": "punctuation"}),
+            (regex.compile(r'(\p{Ps}|\p{Pi})'), "Token", {"text": "assign_to_group_1", "kind": "punctuation", "position": "startpunct"}),
+            (regex.compile(r'(\p{Pe}|\p{Pf})'), "Token", {"text": "assign_to_group_1", "kind": "punctuation", "position": "endpunct"}),
             (re.compile(r'(?:[.]{1,3}"?|[!?]{1,4})'), "Split", {"kind": "internal"}),
             (re.compile(r'\s*+\Z|'
                         r'(?:[\u00A0\u2007\u202F\s][^\n\r]|[^\n\r][\u00A0\u2007\u202F\s])*+'

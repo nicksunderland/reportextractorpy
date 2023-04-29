@@ -1,8 +1,8 @@
 from reportextractorpy.abstract_pattern_annotator import AbstractPatternAnnotator
-from reportextractorpy.custom_rule_actions import GetNumberFromNumeric
+from reportextractorpy.custom_rule_actions import GetNumberFromNumeric, RemoveAnnAll, GetList
 from gatenlp.pam.pampac import Rule
-from gatenlp.pam.pampac import AnnAt, Seq, Text
-from gatenlp.pam.pampac import AddAnn
+from gatenlp.pam.pampac import AnnAt, Seq, Text, Lookahead, RemoveAnn, AddAnn, Or
+from gatenlp.pam.matcher import FeatureMatcher
 from typing import List
 import re
 
@@ -13,7 +13,7 @@ class Pattern(AbstractPatternAnnotator):
         self.var_name = ""
         self.descriptor = NotImplemented
         self.outset_name = ""
-        self.included_annots = [("", "Numeric")]
+        self.included_annots = [("", ["Numeric", "Units", "Lookup", "Token", "Split"])]
         self.pampac_skip = "longest"
         self.pampac_select = "first"
         self.rule_list = self.gen_rule_list()
@@ -54,73 +54,78 @@ class Pattern(AbstractPatternAnnotator):
         action_4 = AddAnn(type="Lookup", features={"value": GetNumberFromNumeric(name_1="value"),
                                                    "kind": "numeric_category"})
 
+        # split metric length
+        split_length_pattern = Seq(AnnAt(type="Numeric", name="value_1"),
+                                   AnnAt(type="Units", features=FeatureMatcher(minor="m"), name="remove"),
+                                   Lookahead(AnnAt(type="Numeric", name="value_2"),
+                                             AnnAt(type="Units", features=FeatureMatcher(minor="cm"))),
+                                   name="split_length")
+
+        split_length_action_1 = AddAnn(type="Numeric", features={"value": GetNumberFromNumeric(name_1="value_1",
+                                                                                               name_2="value_2",
+                                                                                               func=lambda x, y: float(x)*100 + float(y)),
+                                                                 "kind": "split_metric"})
+        remove_action_1 = RemoveAnn(name="remove", annset_name="")
+
+        # Tag references to specific images or frames and remove the numeric tag e.g. frame 4 & 5 & 6, or images 4, 6
+        frame_reference_pattern = Seq(AnnAt(type="Lookup", features=FeatureMatcher(major="image_frame")),
+                                      Seq(AnnAt(type="Numeric", name="frame_num"),
+                                          AnnAt(type="Token", features=FeatureMatcher(kind="punctuation")).notcoextensive(type="Split").repeat(0,1)
+                                          ).repeat(1, 5))
+
+        frame_reference_action = AddAnn(type="Lookup", features={"value": GetList(name="frame_num"),
+                                                                 "major": "image_frame_value",
+                                                                 "minor": "image_frame_value"})
+        remove_action_2 = RemoveAnnAll(name="frame_num", annset_name="", silent_fail=True)
+
         rule_list = [Rule(pattern_2, action_2),
                      Rule(pattern_1, action_1),
                      Rule(pattern_3, action_3),
-                     Rule(pattern_4, action_4)]
+                     Rule(pattern_4, action_4),
+                     Rule(split_length_pattern, split_length_action_1, remove_action_1),
+                     Rule(frame_reference_pattern, frame_reference_action, remove_action_2)]
 
         return rule_list
-    # Phase: CleanNumeric
-    # Input: Numeric Units Token Split
-    # Options: control=Appelt negationGrouping=false
-    # /*
-    #  * Description:
-    #  * Here we retag split numeric values e.g. 1m 80cm ({Numeric}{Units}{Numeric}{Units}) becomes 1.8m {Numeric}{Units}
-    #  * To keep it compatible with the Context:Numeric:Units matching we assign the 'value' feature of the metre annotation
-    #  * to a combination of the metre and cm; then remove annots from the '80' and the 'cm' so they effectively get ignored.
-    #  * is correct.
-    #  */
-    # Rule: split_metric_length
-    # (
-    # 	({Numeric}):metres
-    # 	({Units.minorType == "m"})
-    # 	({Numeric}):cm
-    # 	({Units.minorType == "cm"})?
-    #
-    # ):split_metric
-    # -->
-    # :split_metric{
-    #
-    # 	String metres_str = stringFor(doc, bindings.get("metres"));
-    # 	String cm_str     = bindings.get("cm")!=null ? stringFor(doc, bindings.get("cm")) : "0";
-    # 	String value = null;
-    # 	try {
-    # 		Double metres = Double.parseDouble(metres_str);
-    # 		Double cm     = Double.parseDouble(cm_str);
-    # 		metres = metres + (cm / 100.0);
-    # 		value = metres.toString();
-    # 	}catch(Exception e) {
-    # 		return;
-    # 	}
-    # 	FeatureMap newFeatures = Factory.newFeatureMap();
-    # 	newFeatures.put("value", value);
-    # 	newFeatures.put("type", "split_value");
-    # 	outputAS.add(bindings.get("metres").firstNode(),bindings.get("metres").lastNode(),"Numeric", newFeatures);
-    #
-    #
-    # 	// Since now the data lives in the new Numeric annotation's feature, we can clean up and remove the Numeric / Units annots
-    # 	AnnotationSet splitMetricAnnot = bindings.get("split_metric");
-    #
-    # 	FeatureMap fm_double = Factory.newFeatureMap();
-    # 	fm_double.put("type", "double");
-    # 	AnnotationSet doubleWithin = inputAS.get("Numeric", fm_double).getContained(
-    # 			splitMetricAnnot.firstNode().getOffset(),
-    # 			splitMetricAnnot.lastNode().getOffset());
-    # 	inputAS.removeAll(doubleWithin);
-    #
-    # 	FeatureMap fm_integer = Factory.newFeatureMap();
-    # 	fm_integer.put("type", "integer");
-    # 	AnnotationSet integerWithin = inputAS.get("Numeric", fm_integer).getContained(
-    # 			splitMetricAnnot.firstNode().getOffset(),
-    # 			splitMetricAnnot.lastNode().getOffset());
-    # 	inputAS.removeAll(integerWithin);
-    #
-    # 	FeatureMap fm_cm = Factory.newFeatureMap();
-    # 	fm_cm.put("minorType", "cm");
-    # 	AnnotationSet cmUnitsWithin = inputAS.get("Units", fm_cm).getContained(
-    # 			splitMetricAnnot.firstNode().getOffset(),
-    # 			splitMetricAnnot.lastNode().getOffset());
-    # 	inputAS.removeAll(cmUnitsWithin);
-    # }
+
+    """
+    
+    Phase: RelationalDistance
+    Input: Numeric Token Lookup Anatomy Units Split
+    Options: control=Brill negationGrouping=false
+    /*
+     * Description:
+     * Tag references to distances in relation to something else, these rarely are the numeric value we want 
+     * e.g. the Asc Ao measured 1cm from the StJ is 33mm (we want to tag the 1cm as a relational distance and 
+     * the 33mm as a normal integer Numeric annotation which can be found later
+     */
+    Rule: relational_distance_rule
+    (	
+        ({Anatomy}):anatomy1
+        ({Token, !Split})[0,1]
+        {Lookup.majorType == "measure_verb"}
+        ({Numeric}):distance
+        (({Units.majorType == "length"})?):units
+        {Lookup.minorType == "preposition", //e.g. from
+            !Token.string ==~ "(at)|(on)"}
+        ({Anatomy}):anatomy2
+    
+    ):relational_distance
+    -->
+    :relational_distance.Lookup = {	 anatomy1  = :anatomy1.Anatomy.minorType,
+                                     anatomy2  = :anatomy2.Anatomy.minorType,
+                                     distance  = :distance.Numeric.value,
+                                     units     = :units.Units.minorType,
+                                     majorType = "relational_distance"},
+    :relational_distance{
+        inputAS.remove( bindings.get("distance").iterator().next() );
+        inputAS.remove( bindings.get("anatomy2").iterator().next() );
+        if(bindings.get("units")!=null) {
+            inputAS.remove(bindings.get("units").iterator().next());
+        }
+    }
+    
+    """
+
+
 
 

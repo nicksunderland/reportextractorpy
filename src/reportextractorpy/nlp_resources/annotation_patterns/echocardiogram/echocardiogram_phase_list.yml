@@ -9,7 +9,6 @@ phases:
   - general.refine_gaz_annotations
   - general.imperial_length_measurements
   - general.imperial_weight_measurements
-#  - general/misc_numeric_annotations.py
 #  - general/height.py
 #  - general/weight.py
 
