@@ -2,37 +2,6 @@ from gatenlp.pam.pampac import actions, Getter
 from gatenlp.pam.pampac import GetFeature
 
 
-class RemAnn:
-    """
-    Action for removing an annotation.
-    """
-    def __init__(self, name=None, annset_name="", resultidx=0, matchidx=0, silent_fail=True):
-        assert name is not None
-        self.name = name
-        self.annset_name = annset_name
-        self.resultidx = resultidx
-        self.matchidx = matchidx
-        self.silent_fail = silent_fail
-
-    def __call__(self, succ, context=None, location=None):
-        annset = context.doc.annset(self.annset_name)
-        match = actions._get_match(succ, self.name, self.resultidx, self.matchidx, self.silent_fail)
-        if not match:
-            if self.silent_fail:
-                return
-            else:
-                raise Exception(f"Could not find the name {self.name}")
-        theann = match.get("ann")
-        if theann is None:
-            if self.silent_fail:
-                return
-            else:
-                raise Exception(
-                    f"Could not find an annotation for the name {self.name}"
-                )
-        annset.remove(theann.id)
-
-
 class GetNumberFromText(Getter):
     """
     Helper to average two numerical annotations.

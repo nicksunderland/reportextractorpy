@@ -1,5 +1,4 @@
 from reportextractorpy.abstract_pattern_annotator import AbstractPatternAnnotator
-from reportextractorpy.custom_rule_actions import RemAnn
 from gatenlp.pam.pampac import Rule, pampac_parsers
 from gatenlp.pam.pampac import Ann, AnnAt, Or, And, Filter, Find, Lookahead, N, Seq, Text
 from gatenlp.pam.pampac import AddAnn, RemoveAnn, UpdateAnnFeatures
@@ -29,7 +28,7 @@ class Pattern(AbstractPatternAnnotator):
         numeric_in_other = AnnAt(type="Numeric", name="remove_tag").within(type=re.compile('^(?!Numeric$|Sentence$).*'))
 
         # The remove action
-        action_remove = RemAnn(name="remove_tag")
+        action_remove = RemoveAnn(name="remove_tag", annset_name="")
 
         rule_list = [Rule(numeric_in_numeric, action_remove),
                      Rule(numeric_in_other, action_remove)]

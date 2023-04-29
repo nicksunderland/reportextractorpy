@@ -23,78 +23,45 @@ class Pattern(AbstractPatternAnnotator):
 
         # measurements in feet and inches (allowing a token inbetween, e.g. comma or fullstop)
         # optional inches units
-        pattern_1 = Seq(AnnAt(type="Numeric", name="value_1"),
-                        AnnAt(type="Units", features=dict(minor="feet")),
-                        N(Lookahead(AnnAt(type="Numeric", name="value_2"),
-                                    AnnAt().notoverlapping(type="Units", features=FeatureMatcher(major="mass"))),
-                          min=0, max=1))
-
-                                      #type= "Units", features=dict(minor=IfNot(isIn("pounds"))))))
-
-
-            # ,
-            #             AnnAt(type="Units", features=dict(minor="inches")))
-            #             #
-            #             #   .notbefore(features=dict(minor=re.compile('(?!inches$)'))), min=0, max=1),
-                        # N(), min=0, max=1))
+        pattern_1 = Seq(
+                        # Numeric annotation
+                        AnnAt(type="Numeric", name="value_1"),
+                        # Units annotation
+                        AnnAt(type="Units", features=FeatureMatcher(minor="feet")),
+                        # Optional sequence of joining phrase (optional) & numeric, followed by an optional inches
+                        # unit (lookahead to check units aren't related to mass first before capturing)
+                        Seq(Lookahead(parser=Seq(Text(text=re.compile('\s{0,2}(?:[&,.]|(and))\s{0,2}', flags=re.I)).repeat(0, 1),
+                                                 AnnAt(type="Numeric", name="value_2")),
+                                      laparser=AnnAt().notoverlapping(type="Units", features=FeatureMatcher(major="mass"))),
+                            AnnAt(type="Units", features=FeatureMatcher(minor="inches")).repeat(0, 1)).repeat(0, 1))
 
         action_1 = AddAnn(type="ImperialMeasurement", features={"major": "length",
                                                                 "feet": GetNumberFromNumeric(name_1="value_1"),
                                                                 "inches": GetNumberFromNumeric(name_2="value_2", silent_fail=True)})
-        #
-        # # measurements in feet and inches (allowing a token inbetween, e.g. comma or fullstop)
-        # # optional feet units
-        # pattern_2 = Seq(AnnAt(type="Numeric", name="value_1"),
-        #                 N(AnnAt(type="Units", features=dict(minor="feet")), min=0, max=1),
-        #                 N(Text(text=re.compile('\s{0,2}[&,.]|(and)\s{0,2}', flags=re.I)), min=0, max=1),
-        #                 AnnAt(type="Numeric", name="value_2"),
-        #                 AnnAt(type="Units", features=dict(minor="inches")))
-        #
-        # action_2 = AddAnn(type="ImperialMeasurement", features={"major": "length",
-        #                                                         "feet": GetNumberFromNumeric(name_1="value_1", silent_fail=True),
-        #                                                         "inches": GetNumberFromNumeric(name_2="value_2")})
-        #
-        # # measurements in stone and pounds (allowing a token inbetween, e.g. comma or fullstop)
-        # # optional pounds units
-        # pattern_3 = Seq(AnnAt(type="Numeric", name="value_1"),
-        #                 AnnAt(type="Units", features=dict(minor="stone")),
-        #                 N(Text(text=re.compile('\s{0,2}[&,.]|(and)\s{0,2}', flags=re.I)), min=0, max=1),
-        #                 N(AnnAt(type="Numeric", name="value_2")
-        #                   .notbefore(features=dict(minor=re.compile('(?!pounds$)'))), min=0, max=1),
-        #                 N(AnnAt(type="Units", features=dict(minor="pounds")), min=0, max=1))
-        #
-        #
-        #                      #     laparser=AnnAt(features=dict(minor=re.compile(r'(?!feet$)')))))
-        #     #
-        #     #                                      ).notat(features=dict(minor="feet"))), min=0, max=1))
-        #
-        #
-        #                           #  laparser=AnnAt(features=dict(minor=re.compile(r'(?!pounds$)')))), min=0, max=1))
-        #
-        #     #bug reported     .notbefore(type="Units")
-        #
-        # action_3 = AddAnn(type="ImperialMeasurement", features={"major": "mass",
-        #                                                         "stone": GetNumberFromNumeric(name_1="value_1"),
-        #                                                         "pounds": GetNumberFromNumeric(name_2="value_2", silent_fail=True)})
-        #
-        # # measurements in stone and pounds (allowing a token inbetween, e.g. comma or fullstop)
-        # # optional stone units
-        # pattern_4 = Seq(AnnAt(type="Numeric", name="value_1"),
-        #                 N(AnnAt(type="Units", features=dict(minor="stone")), min=0, max=1),
-        #                 N(Text(text=re.compile('\s{0,2}[&,.]|(and)\s{0,2}', flags=re.I)), min=0, max=1),
-        #                 AnnAt(type="Numeric", name="value_2"),
-        #                 AnnAt(type="Units", features=dict(minor="pounds")))
-        #
-        # action_4 = AddAnn(type="ImperialMeasurement", features={"major": "mass",
-        #                                                         "feet": GetNumberFromNumeric(name_1="value_1", silent_fail=True),
-        #                                                         "inches": GetNumberFromNumeric(name_2="value_2")})
-        # # measurements in feet and inches (allowing a token inbetween, e.g. comma or fullstop)
 
-        rule_list = [Rule(pattern_1, action_1)]
-        # ,
-            #          Rule(pattern_2, action_2),
-            #          Rule(pattern_3, action_3),
-            #          Rule(pattern_4, action_4)]
+        # measurements in feet and inches (allowing a token inbetween, e.g. comma or fullstop)
+        # optional feet units
+        pattern_2 = Seq(AnnAt(type="Numeric", name="value_1"),
+                        AnnAt(type="Units", features=FeatureMatcher(minor="feet")).repeat(0, 1),
+                        AnnAt(type="Numeric", name="value_2"),
+                        AnnAt(type="Units", features=FeatureMatcher(minor="inches")))
+
+        action_2 = AddAnn(type="ImperialMeasurement", features={"major": "length",
+                                                                "feet": GetNumberFromNumeric(name_1="value_1", silent_fail=True),
+                                                                "inches": GetNumberFromNumeric(name_2="value_2")})
+
+        # inches only
+        pattern_3 = Seq(AnnAt(type="Numeric", name="value_2"),
+                        AnnAt(type="Units", features=FeatureMatcher(minor="inches")))
+
+        action_3 = AddAnn(type="ImperialMeasurement", features={"major": "length",
+                                                                "feet": GetNumberFromNumeric(name_1="value_1",
+                                                                                             silent_fail=True),
+                                                                "inches": GetNumberFromNumeric(name_2="value_2")})
+
+        rule_list = [Rule(pattern_1, action_1),
+                     Rule(pattern_2, action_2),
+                     Rule(pattern_3, action_3)]
 
         return rule_list
 

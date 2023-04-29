@@ -24,7 +24,10 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.ui.plain_text_edit_input.setPlainText("""sinus of valsalva 3cm. 11st. 6 feet 5. prox. asc. aorta 3-to-4cm. Thie is 1/4 of. The sino tubular junction 3.4mm. This is 30 by 23mm""")
+        self.ui.plain_text_edit_input.setPlainText("""Test.
+        6 feet and 5 pounds test 6 feet 5 stone test. 6 feet & 5 inches test. 6 foot. test.
+        6 5 inches. test. 6 6 pounds. test. 56 inches.
+        6 stone & 5 pounds. 6 5 inches""")
         self.web_engine_view = QWebEngineView(self.ui.centralwidget)
         self.ui.html_widget_holder_layout.addWidget(self.web_engine_view)
         self.make_connections()
