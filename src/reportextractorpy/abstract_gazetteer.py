@@ -20,6 +20,12 @@ class AbstractGazetteer(ABC):
     # ]
     regex_rules: List[re.Pattern | regex.Pattern | Tuple[regex.Pattern | re.Pattern, str, dict]] = NotImplemented
 
+    # A list of strings to match - this will be used /moved to the testing modules to verify that the
+    # regex rules do find the correct strings
+    # TODO: work out the best way to do this, probably best to move
+    #  to testing module and have expected values / expected pass / fail status
+    string_matches: List[str] = NotImplemented
+
     # Auto formatted regex with the annotation type and features
     # Example input / AbstractGazetteer derived class configuration:
     #   annot_type = "Date"
@@ -41,11 +47,11 @@ class AbstractGazetteer(ABC):
             comb_regex = ""
             for rule in self.regex_rules:
                 if isinstance(rule, tuple) and (isinstance(rule[0], regex.Pattern) or isinstance(rule[0], re.Pattern)):
-                    pattern = rule[0]
+                    regex_rule = rule[0]
                     annot_type = rule[1]
                     annot_features = rule[2]
                 elif isinstance(rule, regex.Pattern) or isinstance(rule, re.Pattern):
-                    pattern = rule
+                    regex_rule = rule
                     annot_type = self.annot_type
                     annot_features = self.annot_features
                 else:
@@ -55,11 +61,15 @@ class AbstractGazetteer(ABC):
                 # set a fature to "assign_to_group_X", where X is the
                 # group e.g. {"value": "assign_to_group_1"}, G1=group1
                 # of the regex
+                case_flag = r'(?i)' if regex_rule.flags.real == 34 else r''  # should just not use flags argument in re.compile as it doesn't translate to string - the only benefit of using re.compile in the gazetteer is the syntax highlighing in pycharm; should test what performance impact this has
                 comb_regex = comb_regex + \
-                             "|" + pattern.pattern + "\n" + \
+                             "|" + case_flag + regex_rule.pattern + "\n" + \
                              "0 => " + annot_type + "  " + \
                              ", ".join([k + "=G" + v.lstrip("assign_to_group_")
-                                        if "assign_to_group_" in v
+                                        if "assign_to_group_"
+                                           ""
+                                           ""
+                                           "" in v
                                         else k + "=\"" + v + "\""
                                         for k, v in annot_features.items()]) + \
                              "\n"

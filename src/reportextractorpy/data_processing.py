@@ -12,7 +12,6 @@ from typing import List
 from reportextractorpy.utils import Utils
 from os import path
 from yaml import safe_load
-import pickle
 from importlib import import_module
 from gatenlp.pam.pampac import PampacAnnotator
 import re
@@ -89,7 +88,7 @@ class DataProcessing(QtCore.QObject):
         pattern_annotators = []
         for module in pattern_modules:
             pattern_module = getattr(import_module(module), "Pattern")
-            print("IMPORT PATTERN MODULE:" + " " + module)
+            print("\033[92mImport pattern module: " + module + "\033[0m")
             for annotator in pattern_module():
                 pattern_annotators.append(annotator)
 

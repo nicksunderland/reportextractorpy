@@ -5,7 +5,7 @@ import re
 class Gazetteer(AbstractGazetteer):
     annot_type = "Anatomy"
     annot_features = {"major": "aorta",
-                      "minor": "aorta"}
+                      "minor": "coronary_sinus"}
     regex_rules = [
-        re.compile(r'(?i)\baorta\b'),
+        re.compile(r'(?i)\bcoronary sinus\b'),
     ]

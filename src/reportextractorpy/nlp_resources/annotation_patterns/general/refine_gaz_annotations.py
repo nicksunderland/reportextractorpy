@@ -33,6 +33,18 @@ class Pattern(AbstractPatternAnnotator):
         rule_list = [Rule(numeric_in_numeric, action_remove),
                      Rule(numeric_in_other, action_remove)]
 
+        """
+        Clean categorical annotations 
+        Description: Here we remove units within Categorical annotations
+        Example: 'is non dilated'
+            is         -->{Unit, minorType=="positive_assertion"}
+            non        -->{Unit, minorType=="negative_assertion"}
+            dilated    -->{Categorical}
+            non dilated-->{Categorical}
+        becomes is{Unit} non dilated{Categorical}
+        """
+
+
         return rule_list
 
 #
