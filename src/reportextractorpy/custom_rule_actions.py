@@ -1,6 +1,5 @@
 from gatenlp.pam.pampac import actions, Getter
 from gatenlp.pam.pampac import GetFeature
-from gatenlp.pam.pampac.actions import _get_match
 from typing import List
 
 
@@ -163,7 +162,9 @@ class RemoveAnnAll:
         Create a remove all annotation action.
         Args:
             name: the name, or list of names, of a match(es) from which to get the annotation to remove
-            type: the annotation type, or list of types, of annotation within the whole matched pattern to remove
+            type: the annotation type, or list of types, of annotation within the whole matched pattern to
+                remove, if the name parameter is supplied then only named elements of these types will be
+                removed. If no name or type is provided all annotations in the span will be removed.
             annset_name: the name of the annotation set to remove the annotation from. If this is the same set
                 as used for matching it may influence the matching result if the annotation is removed before
                 the remaining matching is done.
@@ -200,30 +201,61 @@ class RemoveAnnAll:
 
     def __call__(self, succ, context=None, location=None, annset=None):
 
-        anns_to_remove = []
-
-        for i, r in enumerate(succ._results):
-
-            if self.type is not None:
-                for ann in r.anns4matches():
-                    if ann.type in self.type:
-                        anns_to_remove.append(ann)
-
-            if self.name is not None:
-                for name in self.name:
-                    for match in r.matches4name(name):
-                        ann = match.get("ann")
-                        anns_to_remove.append(ann)
-
-        if not anns_to_remove:
-            if self.silent_fail:
-                return
-            else:
-                raise Exception(
-                    f"Could not find annotations of type: {self.type} and / or of name: {self.name}"
-                )
+        if len(succ) == 0:
+            if not self.silent_fail:
+                raise Exception(f"No results: {succ}")
+            return None
 
         if self.annset_name is not None:
             annset = context.doc.annset(self.annset_name)
 
-        [annset.remove(ann) for ann in anns_to_remove if ann is not None]
+        for res in succ:
+
+            # all annotations in pattern match span
+            anns_all = annset.within(res.span.start, res.span.end)
+            if self.type is not None:
+                if not any([t in self.type for t in anns_all.type_names]):
+                    if self.silent_fail:
+                        return
+                    else:
+                        raise Exception(
+                            f"Could not find any annotation type for the type(s) {self.type}"
+                        )
+
+            # name(s) provided - look for annotations
+            anns_named = set()
+            if self.name is not None:
+                for name in self.name:
+                    for match in res.matches4name(name):
+                        ann = match.get("ann")
+                        if ann is not None:
+                            anns_named.add(ann)
+
+                if not anns_named:
+                    if self.silent_fail:
+                        return
+                    else:
+                        raise Exception(
+                            f"Could not find any annotation for the name(s) {self.name}"
+                        )
+
+            # Handle each annotation in turn
+            for ann in anns_all:
+                # no name and no type specified - removal all annotations
+                if self.name is None and self.type is None:
+                    annset.remove(ann)
+                # both name and type specified - removal all named annotations of those types
+                elif self.name is not None and self.type is not None:
+                    if ann in anns_named and ann.type in self.type:
+                        annset.remove(ann)
+                # only name specified - remove named annotations
+                elif self.name is not None and self.type is None:
+                    if ann in anns_named:
+                        annset.remove(ann)
+                # only type specified - remove annotations of that type
+                elif self.name is None and self.type is not None:
+                    if ann.type in self.type:
+                        annset.remove(ann)
+                # shouldn't get here
+                else:
+                    raise Exception("RemoveAnnAll() code error")
