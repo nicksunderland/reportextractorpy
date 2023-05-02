@@ -272,7 +272,7 @@ stanza = ["stanza (>=1.3.0)"]
 type = "git"
 url = "https://github.com/GateNLP/python-gatenlp.git"
 reference = "HEAD"
-resolved_reference = "1b2d974f5d4744419ec0ce88ac5c062405e1c0c8"
+resolved_reference = "29f5390ca850143f02cfefac3b635835067eae3b"
 
 [[package]]
 name = "idna"
@@ -486,17 +486,6 @@ machine-learning = ["numpy", "python-crfsuite", "scikit-learn", "scipy"]
 plot = ["matplotlib"]
 tgrep = ["pyparsing"]
 twitter = ["twython"]
-
-[[package]]
-name = "numerizer"
-version = "0.2.2"
-description = "Python module for converting natural language numbers into ints and floats."
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "numerizer-0.2.2.tar.gz", hash = "sha256:d15deecd3ad25f1cb89608cb505af1abf31137944a30263d3cdf27c06903c053"},
-]
 
 [[package]]
 name = "numpy"
@@ -1240,4 +1229,4 @@ colorama = {version = ">=0.4.6", markers = "sys_platform == \"win32\" and python
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "b303aa399671169bee355766303292422bab7389c3b75fdb5ab54e03fea10988"
+content-hash = "6d286797d18cdfb779466aee1d76cb3882b6f8c406a59a3d3cd208eec4787d4c"

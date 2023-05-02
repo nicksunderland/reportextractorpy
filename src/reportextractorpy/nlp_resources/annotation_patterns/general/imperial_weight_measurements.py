@@ -21,8 +21,13 @@ class Pattern(AbstractPatternAnnotator):
 
     def gen_rule_list(self) -> List[Rule]:
 
-        # measurements in feet and inches (allowing a token inbetween, e.g. comma or fullstop)
-        # optional pounds units
+        rule_list = []
+
+        """
+        Stone +/- pounds
+        Description: measurements in stone and pound (allowing a token inbetween, e.g. comma or fullstop)
+        Example: '8 stone 3 pounds'
+        """
         pattern_1 = Seq(
                         # Numeric value
                         AnnAt(type="Numeric", name="value_1"),
@@ -30,7 +35,7 @@ class Pattern(AbstractPatternAnnotator):
                         AnnAt(type="Units", features=FeatureMatcher(minor="stone")),
                         # Optional sequence of joining phrase (optional) & numeric, followed by an optional pounds
                         # unit (lookahead to check units aren't related to length first before capturing)
-                        Seq(Lookahead(parser=Seq(AnnAt(features=FeatureMatcher(text=re.compile('[&,.]|and', flags=re.I))).repeat(0, 1),
+                        Seq(Lookahead(parser=Seq(AnnAt(text=re.compile('(?i)[&,.]|and')).repeat(0, 1),
                                                  AnnAt(type="Numeric", name="value_2")),
                                       laparser=AnnAt().notoverlapping(type="Units", features=FeatureMatcher(major="length"))),
                             AnnAt(type="Units", features=FeatureMatcher(minor="pounds")).repeat(0, 1)).repeat(0, 1))
@@ -38,25 +43,34 @@ class Pattern(AbstractPatternAnnotator):
         action_1 = AddAnn(type="ImperialMeasurement", features={"major": "mass",
                                                                 "stone": GetNumberFromNumeric(name_1="value_1"),
                                                                 "pounds": GetNumberFromNumeric(name_2="value_2", silent_fail=True)})
+        rule_list.append(Rule(pattern_1, action_1))
 
-        # measurements in feet and inches (allowing a token inbetween, e.g. comma or fullstop)
-        # optional stone units
+        """
+        Stone and pounds
+        Description: measurements in stone and pounds, but when the stone units may be implied
+        Example: '8 3pounds'
+        """
         pattern_2 = Seq(AnnAt(type="Numeric", name="value_1"),
                         AnnAt(type="Units", features=FeatureMatcher(minor="stone")).repeat(0, 1),
                         AnnAt(type="Numeric", name="value_2"),
                         AnnAt(type="Units", features=FeatureMatcher(minor="pounds")))
-
         action_2 = AddAnn(type="ImperialMeasurement", features={"major": "mass",
                                                                 "stone": GetNumberFromNumeric(name_1="value_1", silent_fail=True),
                                                                 "pounds": GetNumberFromNumeric(name_2="value_2")})
+        rule_list.append(Rule(pattern_2, action_2))
 
         # pounds only
+        """
+        Pounds only
+        Description: measurements in pounds
+        Example: '200pounds'
+        """
         pattern_3 = Seq(AnnAt(type="Numeric", name="value_2"),
                         AnnAt(type="Units", features=FeatureMatcher(minor="pounds")))
-
         action_3 = AddAnn(type="ImperialMeasurement", features={"major": "mass",
                                                                 "stone": GetNumberFromNumeric(name_1="value_1", silent_fail=True),
                                                                 "pounds": GetNumberFromNumeric(name_2="value_2")})
+        rule_list.append(Rule(pattern_3, action_3))
 
         # TODO: other
         """
@@ -72,10 +86,6 @@ class Pattern(AbstractPatternAnnotator):
         
         ):imperial_weight
         """
-
-        rule_list = [Rule(pattern_1, action_1),
-                     Rule(pattern_2, action_2),
-                     Rule(pattern_3, action_3)]
 
         return rule_list
 

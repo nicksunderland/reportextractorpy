@@ -1,7 +1,9 @@
 from reportextractorpy.abstract_pattern_annotator import AbstractPatternAnnotator
-from reportextractorpy.custom_rule_actions import GetNumberFromNumeric, RemoveAnnAll, GetList
-from gatenlp.pam.pampac import Rule
-from gatenlp.pam.pampac import AnnAt, Seq, Text, Lookahead, RemoveAnn, AddAnn, GetText
+from reportextractorpy.custom_rule_actions import GetNumberFromNumeric, GetList
+from gatenlp.pam.pampac.actions import RemoveAnnAll, AddAnn, RemoveAnn
+from gatenlp.pam.pampac.getters import GetText
+from gatenlp.pam.pampac.pampac_parsers import AnnAt, Seq, Text, Lookahead
+from gatenlp.pam.pampac.rule import Rule
 from gatenlp.pam.matcher import FeatureMatcher
 from typing import List
 import re
@@ -30,7 +32,7 @@ class Pattern(AbstractPatternAnnotator):
         Example: '40-to-60' -> 50
         """
         pattern_2 = Seq(AnnAt(type="Numeric", name="value_1"),
-                        Text(text=re.compile('(?:[-]|to[-]?)(?:\s[a]\s)?(?:max|min(?:imum)?)?(?:\sof)?', flags=re.I)),
+                        Text(text=re.compile('(?i)-?to-?(?=[0-9]| )(?: a )?(?:(?:max|min)(?:imum)?)?(?: of)?')),
                         AnnAt(type="Numeric", name="value_2"))
         action_2 = AddAnn(type="Numeric", features={"value": GetNumberFromNumeric(name_1="value_1", name_2="value_2"),
                                                     "kind": "numeric_range",
@@ -45,7 +47,7 @@ class Pattern(AbstractPatternAnnotator):
         Example: '1/4' -> 0.25
         """
         pattern_1 = Seq(AnnAt(type="Numeric", name="value_1"),
-                        Text(text=re.compile(r'/')),
+                        AnnAt(text="/"),
                         AnnAt(type="Numeric", name="value_2"))
         action_1 = AddAnn(type="Numeric", features={"value": GetNumberFromNumeric(name_1="value_1",
                                                                                   name_2="value_2",
@@ -56,15 +58,20 @@ class Pattern(AbstractPatternAnnotator):
         """
         Orthogonal number rule
         Description: tag orthogonal numbers and remove the Numeric annotations
-        Example: '1m 80cm' -> 180cm
+        Example: '3cm by 3cm', '4x5cm'
         """
         orthog_pat = Seq(AnnAt(type="Numeric", name="value_1"),
-                        Text(text=re.compile(r'\s?(?:x|by)\s?')),
-                        AnnAt(type="Numeric", name="value_2"))
+                         AnnAt(type="Units", name="units_1").repeat(0, 1),
+                         AnnAt(text=re.compile(r'(?i)x|by')),
+                         AnnAt(type="Numeric", name="value_2"),
+                         AnnAt(type="Units", name="units_2").repeat(0, 1))
+
         orthog_act = AddAnn(type="Numeric", features={"value_1": GetNumberFromNumeric(name_1="value_1"),
-                                                    "value_2": GetNumberFromNumeric(name_2="value_2"),
-                                                    "kind": "orthogonal_numbers"})
-        orthog_act_2 = RemoveAnnAll(type="Numeric")
+                                                      "units_1": GetText(name="units_1", silent_fail=True),
+                                                      "value_2": GetNumberFromNumeric(name_2="value_2"),
+                                                      "units_2": GetText(name="units_2", silent_fail=True),
+                                                      "kind": "orthogonal_numbers"})
+        orthog_act_2 = RemoveAnnAll(types="Numeric")
         rule_list.append(Rule(orthog_pat, orthog_act, orthog_act_2))
 
         """
@@ -72,7 +79,7 @@ class Pattern(AbstractPatternAnnotator):
         Description: tag categories or number descriptors that are not 'numeric'
         Example: 'type 2 MI'
         """
-        pattern_4 = Seq(Text(text=re.compile(r'type\s?', re.I)),
+        pattern_4 = Seq(AnnAt(text=re.compile(r'(?i)type')),
                         AnnAt(type="Numeric", name="value"))
         action_4 = AddAnn(type="Lookup", features={"value": GetNumberFromNumeric(name_1="value"),
                                                    "kind": "numeric_category"})
@@ -102,13 +109,14 @@ class Pattern(AbstractPatternAnnotator):
         """
         frame_reference_pattern = Seq(AnnAt(type="Lookup", features=FeatureMatcher(major="image_frame")),
                                       Seq(AnnAt(type="Numeric", name="frame_num"),
-                                          AnnAt(type="Token", features=FeatureMatcher(kind="punctuation")).notcoextensive(type="Split").repeat(0,1)
+                                          AnnAt(type="Token", features=FeatureMatcher(kind="punctuation"))
+                                          .notcoextensive(type="Split").repeat(0, 1)
                                           ).repeat(1, 5))
 
         frame_reference_action = AddAnn(type="Lookup", features={"value": GetList(name="frame_num"),
                                                                  "major": "image_frame_value",
                                                                  "minor": "image_frame_value"})
-        remove_action_2 = RemoveAnnAll(name="frame_num", annset_name="", silent_fail=True)
+        remove_action_2 = RemoveAnnAll(names="frame_num", silent_fail=True)
         rule_list.append(Rule(frame_reference_pattern, frame_reference_action, remove_action_2))
 
         """
@@ -124,12 +132,12 @@ class Pattern(AbstractPatternAnnotator):
                                AnnAt(type="Numeric", name="distance"),
                                AnnAt(type="Units", name="units").repeat(0, 1),
                                AnnAt(type="Lookup", features=FeatureMatcher(minor="preposition"))
-                               .notat(type="Token", features=FeatureMatcher(text=re.compile("^(at|on)$"))),
+                               .notat(type="Token", text=re.compile("^(at|on)$")),
                                AnnAt(type="Token").notat(type="Anatomy").repeat(0, 1),
                                AnnAt(type="Anatomy", name="anatomy_2"))
 
         rel_dist_action = AddAnn(type="Lookup", features={"anatomy_1": GetText(name="anatomy_1"),
-                                                          "anatomy_2": GetText(name="anatomy_1"),
+                                                          "anatomy_2": GetText(name="anatomy_2"),
                                                           "distance": GetNumberFromNumeric(name_1="distance"),
                                                           "units": GetText(name="units", silent_fail=True),
                                                           "major": "relational_distance"})

@@ -9,7 +9,7 @@ phases:
   - general.refine_gaz_annotations
   - general.imperial_length_measurements
   - general.imperial_weight_measurements
-#  - general/height.py
+  - general.height
 #  - general/weight.py
 
  # Tag the report sections, here we looks for headers that indicate which "section"

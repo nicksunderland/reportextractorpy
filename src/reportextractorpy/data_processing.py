@@ -1,21 +1,18 @@
-import regex
-from gatenlp import Document
 from reportextractorpy.nlp_resources.tokenizer.custom_tokenizer import CustomTokenizer
+from reportextractorpy.utils import Utils
+from gatenlp import Document
+from gatenlp.corpora import ListCorpus
 from gatenlp.processing.gazetteer import StringRegexAnnotator
 from gatenlp.processing.pipeline import Pipeline
-from gatenlp.pam.pampac import Rule, PampacAnnotator, Pampac
-from gatenlp.pam.pampac import AnnAt, Or, N
-from gatenlp.pam.pampac import AddAnn
-from gatenlp.processing.tokenizer import NLTKTokenizer
+from gatenlp.processing.executor import SerialCorpusExecutor
+from pyclbr import readmodule
+from gatenlp.pam.pampac import Rule, Pampac, PampacAnnotator, AnnAt, Or, N, AddAnn, And
+from gatenlp.pam.matcher import FeatureMatcher, IfNot
 from PyQt5 import QtCore
-from typing import List
-from reportextractorpy.utils import Utils
 from os import path
 from yaml import safe_load
 from importlib import import_module
-from gatenlp.pam.pampac import PampacAnnotator
 import re
-import regex
 
 
 class DataProcessing(QtCore.QObject):
@@ -28,24 +25,29 @@ class DataProcessing(QtCore.QObject):
         self.mode = mode
         self.data_dict = self._gen_data_dict()
         self.processing_pipeline = self._gen_pipeline()
-        self.docs = []
+        self.corpus = ListCorpus([])
         print(self)
 
-    def run(self, index: List[int] | str = "all"):
-        assert any([all(isinstance(x, int) for x in index), index == "all"])
+    def run(self, index: int | str = "all"):
+        assert isinstance(index, int) or index == "all"
 
-        if index == "all" or len(index) > 1:
+        if index == "all":
             print("TODO: separate run method for running all of the docs (and not emitting until the end)")
             # TODO: separate run method for running all of the docs (and not emitting until the end)
         else:
-            docs = [self.docs[i] for i in index]
-            doc = self.processing_pipeline.pipe(docs)
-            d = next(doc)  # remember the processing only gets called with next()
-            self.processing_complete_signal.emit(d)
+            try:
+                doc = self.corpus[index]
+                doc = self.processing_pipeline(doc)
+                self.processing_complete_signal.emit(doc)
+            except IndexError:
+                print(f'Index error in DataProcessing.run() with index {index} but corpus only containing '
+                      f'{len(self.corpus)} documents')
+                exit()
 
     def load(self, input_str: str, option: str):
+        assert option in ["string", "csv", "dir"]
         if option == "string":
-            self.docs = [Document(input_str)]
+            self.corpus = ListCorpus([Document(input_str)])
         elif option == "csv":
             # TODO: csv loading
             pass
@@ -53,7 +55,10 @@ class DataProcessing(QtCore.QObject):
             # TODO: directory csv loading
             pass
         # int: number of docs loaded, or available to process
-        self.load_complete_signal.emit(len(self.docs))
+        num_docs = len(self.corpus)
+        self.load_complete_signal.emit(num_docs)
+        if num_docs > 0:
+            self.run(index=0)
 
     def _gen_pipeline(self):
         # Regex TOKENIZER (uses modified GATE token regexes to split on)
@@ -76,21 +81,30 @@ class DataProcessing(QtCore.QObject):
             regex_gazetteer.append(source=regex_rules, source_fmt="string")
 
         # Sentence tokenizer
-        pattern_sent = N(Or(AnnAt(type=re.compile(r'^(?!Split$)')),
-                            AnnAt(type="Split").within(type=re.compile(r'^(?!Split$)'))), min=1, max=40)
+        pattern_sent = N(Or(AnnAt().notat(type="Split"),
+                            AnnAt(type="Split").within(type=re.compile(r'^(?!Split$|Token$)'))), min=1, max=40)
         action_sent = AddAnn(type="Sentence")
         rule_sent = Rule(pattern_sent, action_sent)
         pampac = Pampac(rule_sent, skip="longest", select="first")
         sent_tokenizer = PampacAnnotator(pampac, annspec="", outset_name="")
 
         # Patterns
-        pattern_modules = Utils.pattern_modules_list(self.mode)
+        pattern_modules = Utils.pattern_modules_list(self.mode)  # get all the pattern .py files / modules
         pattern_annotators = []
-        for module in pattern_modules:
-            pattern_module = getattr(import_module(module), "Pattern")
-            print("\033[92mImport pattern module: " + module + "\033[0m")
-            for annotator in pattern_module():
-                pattern_annotators.append(annotator)
+        for module in pattern_modules:  # for each pattern module
+            module_info = readmodule(module)  # read the .py file (but doesn't import) to a dictionary
+            for cls_name, mod in module_info.items():  # for each class/phase defined in the module
+                if "AbstractPatternAnnotator" in mod.super:  # if the class inherits AbstractPatternAnnotator
+                    pattern_module = getattr(import_module(module), cls_name)  # actually import the specific class/phase
+                    for template_idx, annotator in enumerate(pattern_module()):  # each class might be a generator which produces templated phases
+                        pattern_annotators.append(annotator)  # add the phase to the list
+                        print(f"\033[92mImport pattern class {cls_name}, template {template_idx}, from module {module} \033[0m")
+                else:
+                    raise Exception(
+                        f'\n\tTrying to import a pattern module containing a class named \'{cls_name}\'\n'
+                        f'\tfrom module \'{module}\'\n'
+                        f'\tbut the class \'{cls_name}\' does not inherit from AbstractPatternAnnotator'
+                    )
 
         return Pipeline(tokenizer,
                         regex_gazetteer,

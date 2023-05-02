@@ -33,7 +33,9 @@ class AbstractPatternAnnotator(ABC):
     def validate_rules(self):
         # The annotation types used in the code
         source_code = inspect.getsource(self.gen_rule_list)
-        code_type_matches = re.findall(r'(?<!AddAnn)\s{0,2}\(\s{0,2}type\s{0,2}=\s{0,2}[\"\'](.+?)[\"\']', source_code)
+        code_type_matches = re.findall(r'(?<!AddAnn)'
+                                       r'(?<!FeatureMatcher)'
+                                       r'\s{0,2}\(\s{0,2}type\s{0,2}=\s{0,2}[\"\'](.+?)[\"\']', source_code)
         code_types = set(code_type_matches)
 
         # The input annotation types specified
@@ -64,6 +66,13 @@ class AbstractPatternAnnotator(ABC):
                   f'\tModule: \'{self.__module__}\'\n'
                   f'\tInput: {input_types}\n'
                   f'\tFound: {code_types} \033[0m')
+
+        if len(self.rule_list) == 0:
+            raise Exception(
+                f'Rule list must contain at least one rule\n'
+                f'\tModule: \'{self.__module__}\'\n'
+                f'\tRules: {self.rule_list}'
+            )
 
     def get_pampac_annotator(self) -> PampacAnnotator:
         # PAMPAC matcher
