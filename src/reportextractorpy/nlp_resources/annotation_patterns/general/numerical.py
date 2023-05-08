@@ -11,7 +11,7 @@ import re
 
 class Pattern(AbstractPatternAnnotator):
 
-    def __init__(self):
+    def __init__(self, outset_name):
         self.var_name = ""
         self.descriptor = NotImplemented
         self.outset_name = ""

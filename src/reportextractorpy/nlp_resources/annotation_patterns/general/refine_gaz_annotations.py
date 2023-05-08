@@ -10,7 +10,7 @@ import re
 
 class Pattern(AbstractPatternAnnotator):
 
-    def __init__(self):
+    def __init__(self, outset_name):
         self.var_name = ""
         self.outset_name = ""
         self.included_annots = [("", ["Numeric", "Units"])]

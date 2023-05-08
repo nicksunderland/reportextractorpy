@@ -96,7 +96,7 @@ class DataProcessing(QtCore.QObject):
             for cls_name, mod in module_info.items():  # for each class/phase defined in the module
                 if "AbstractPatternAnnotator" in mod.super:  # if the class inherits AbstractPatternAnnotator
                     pattern_module = getattr(import_module(module), cls_name)  # actually import the specific class/phase
-                    for template_idx, annotator in enumerate(pattern_module()):  # each class might be a generator which produces templated phases
+                    for template_idx, annotator in enumerate(pattern_module(outset_name=self.mode)):  # each class might be a generator which produces templated phases
                         pattern_annotators.append(annotator)  # add the phase to the list
                         print(f"\033[92mImport pattern class {cls_name}, template {template_idx}, from module {module} \033[0m")
                 else:

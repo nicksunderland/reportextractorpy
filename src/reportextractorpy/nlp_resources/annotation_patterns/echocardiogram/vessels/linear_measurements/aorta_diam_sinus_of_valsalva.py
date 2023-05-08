@@ -11,9 +11,9 @@ import re
 
 class Pattern(AbstractPatternAnnotator):
 
-    def __init__(self, mode: str, ):
+    def __init__(self, outset_name):
 
-        self.annotator_outset_name = mode
+        self.annotator_outset_name = outset_name
         self.var_name = "ao_sov"
         self.included_annots = [("", ["Token", "Anatomy", "Numeric", "Units"])]
         self.pampac_skip = "longest"

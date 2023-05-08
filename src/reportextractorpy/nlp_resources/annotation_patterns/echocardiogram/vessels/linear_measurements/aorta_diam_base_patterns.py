@@ -11,13 +11,13 @@ import re
 
 class Pattern(AbstractPatternAnnotator):
 
-    def __init__(self):
+    def __init__(self, outset_name):
         self.var_name = NotImplemented
         self.descriptor = NotImplemented
         self.templates = [{"var_name": "ao_sov",      "descriptor": "sinus_of_valsalva"},
                           {"var_name": "ao_stj_diam", "descriptor": "sinotubular_junction"},
                           {"var_name": "ao_asc_diam", "descriptor": "ascending_aorta"}]
-        self.outset_name = "echocardiogram"
+        self.outset_name = outset_name
         self.included_annots = [("", ["Token", "Anatomy", "Numeric", "Units"])]
         self.pampac_skip = "longest"
         self.pampac_select = "first"

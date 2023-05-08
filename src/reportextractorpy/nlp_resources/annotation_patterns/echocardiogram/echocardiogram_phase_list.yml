@@ -10,7 +10,7 @@ phases:
   - general.imperial_length_measurements
   - general.imperial_weight_measurements
   - general.height
-#  - general/weight.py
+  - general.weight
 
  # Tag the report sections, here we looks for headers that indicate which "section"
  # of the report we are in.

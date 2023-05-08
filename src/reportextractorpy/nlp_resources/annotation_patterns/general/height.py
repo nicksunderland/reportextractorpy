@@ -1,15 +1,15 @@
 from reportextractorpy.abstract_pattern_annotator import AbstractPatternAnnotator
-from reportextractorpy.custom_rule_actions import GetNumberFromNumeric
+from reportextractorpy.custom_rule_actions import GetNumberFromNumeric, ParseNumericUnits
 from gatenlp.pam.pampac import Rule
 from gatenlp.pam.pampac import AnnAt, Seq, Text, N, Lookahead, Ann, Or
 from gatenlp.pam.matcher import IfNot, FeatureMatcher, AnnMatcher, isIn, FeatureEqMatcher
-from gatenlp.pam.pampac import AddAnn, Rule
+from gatenlp.pam.pampac import AddAnn, Rule, GetText, UpdateAnnFeatures, GetAnn
 from typing import List
 import re
 
 
 class TagVarSentence(AbstractPatternAnnotator):
-    def __init__(self):
+    def __init__(self, outset_name):
         self.var_name = "VarSentence"
         self.outset_name = ""
         self.included_annots = [("", ["Sentence", "Lookup", "Anatomy"])]
@@ -37,9 +37,9 @@ class TagVarSentence(AbstractPatternAnnotator):
 
 
 class PatientHeight(AbstractPatternAnnotator):
-    def __init__(self):
-        self.var_name = "VarSentence"
-        self.outset_name = ""
+    def __init__(self, outset_name):
+        self.var_name = "height"
+        self.outset_name = outset_name
         self.included_annots = [("", ["Token", "VarSentence", "Anatomy", "Numeric", "Units", "Lookup",
                                       "ImperialMeasurement", "ReportSection", "Measurement", "Categorical"])]
         self.pampac_skip = "longest"
@@ -57,24 +57,41 @@ class PatientHeight(AbstractPatternAnnotator):
         """
         Macro: CONTEXT
         """
-        context = AnnAt(type="Lookup",
-                        features=FeatureMatcher(minor="height")).within(type="VarSentence",
-                                                                        features=FeatureMatcher(type="height"))
+        context = \
+            AnnAt(type="Lookup", features=FeatureMatcher(minor="height"), name="context")\
+            .within(type="VarSentence", features=FeatureMatcher(type="height"))
+
         """
         Macro: FILTER
         """
-        filter = AnnAt(type="Token")\
+        token_filter = \
+            AnnAt(type="Token")\
             .within(type="VarSentence", features=FeatureMatcher(type="height"))\
             .notat(type="Lookup", features=FeatureMatcher(minor="indexed"))\
             .notat(type="ReportSection")\
             .notat(type="Anatomy")\
             .notat(type="Measurement")
+
         """
         Macro: METRIC_LENGTH
         """
+        metric_length = AnnAt(type="Numeric", name="value")\
+            .within(type="VarSentence", features=FeatureMatcher(type="height"))
 
+        """        
+        Macro: IMPERIAL_LENGTH
+        """
+        imperial_length = \
+            AnnAt(type="ImperialMeasurement", features=FeatureMatcher(major="length"), name="value")\
+            .within(type="VarSentence", features=FeatureMatcher(type="height"))
 
-
+        """
+        Macro: METRIC_LENGTH_UNITS
+        """
+        metric_length_units = \
+            AnnAt(type="Units", features=FeatureMatcher(major="length"), name="units")\
+            .within(type="VarSentence", features=FeatureMatcher(type="height"))
+        #how to do this???    !Units.minorType == "mm"}
 
         """
         PatientHeight
@@ -82,91 +99,35 @@ class PatientHeight(AbstractPatternAnnotator):
         Example: 'height is loads of other text 170cm' 
         """
         ht_sent_pat = (
+            (context |
+             AnnAt(type="Lookup", features=FeatureMatcher(minor="patient"), name="context")
+             .within(type="VarSentence", features=FeatureMatcher(type="height"))) >>
 
-            (context | AnnAt(type="Lookup").within(type="VarSentence", features=FeatureMatcher(type="height"))) >>
-            filter.repeat(0, 8)
+            token_filter.repeat(0, 8) >>
 
+            (imperial_length | (metric_length >> metric_length_units))
         )
-
-        ht_sent_act = AddAnn(type="TESTING_HEIGHT")
+        ht_sent_act = AddAnn(type="height", features=ParseNumericUnits(name_value="value",
+                                                                       name_units="units",
+                                                                       silent_fail=True))
         rule_list.append(Rule(ht_sent_pat, ht_sent_act))
 
-
         """
-        (	
-            ( CONTEXT | {Lookup,
-                            Lookup within {VarSentence.type == "height"}, 
-                            Lookup.minorType == "patient"} ):context
-            
-            ( FILTER )[0,8]
-            
-            ( METRIC_LENGTH ):value
-            
-            ( METRIC_LENGTH_UNITS ):unit
-            
-        ):annot 
-        --> 
-        :annot
-        {
-            /* Creation of the processor object does an 'in-place' processing of the annotations found using the above rules.
-             * Using the bindings, strings are extracted from the doc, processed/parsed, then inserted into the outputAS (output
-             * annotation set).	
-             */
-            JapeRhsProcessor processor = new JapeRhsProcessor("echocardiogram", "height", doc, bindings, outputAS);
-        }
-        
-        /*
-         * Description:
-         * This rule allows more stuff between the context and value, but enforces the units (imperial)
-         * e.g. 'height is loads of other text 170cm' 
-         */
-        Rule: height_2
-        Priority: 99
-        (	
-            ( CONTEXT | {Lookup,
-                            Lookup within {VarSentence.type == "height"}, 
-                            Lookup.minorType == "patient"} ):context
-            
-            ( FILTER )[0,8]
-            
-            ( IMPERIAL_LENGTH ):value
-        
-        ):annot 
-        --> 
-        :annot
-        {
-            /* Creation of the processor object does an 'in-place' processing of the annotations found using the above rules.
-             * Using the bindings, strings are extracted from the doc, processed/parsed, then inserted into the outputAS (output
-             * annotation set).	
-             */
-            JapeRhsProcessor processor = new JapeRhsProcessor("echocardiogram", "height", doc, bindings, outputAS);
-        }
-        
-        /*
-         * Description:
-         * e.g. 'height is 170' 
-         */
-        Rule: height_3
-        Priority: 98
-        (	
-            ( CONTEXT ):context
-            
-            ( {Token within {VarSentence.type == "height"}} )[0,1]
-                    
-            ( METRIC_LENGTH ):value
-            
-            {!Units} // Negative lookahead
-        
-        ):annot 
-        --> 
-        :annot
-        {
-            /* Creation of the processor object does an 'in-place' processing of the annotations found using the above rules.
-             * Using the bindings, strings are extracted from the doc, processed/parsed, then inserted into the outputAS (output
-             * annotation set).	
-             */
-            JapeRhsProcessor processor = new JapeRhsProcessor("echocardiogram", "height", doc, bindings, outputAS);
-        }
-
+        PatientHeight
+        Description: No units but definitely relating to height
+        Example: 'height is 170'
         """
+        ht_sent_pat_2 = (
+                context >>
+
+                token_filter.repeat(0, 1) >>
+
+                Lookahead(metric_length, AnnAt().notat(type="Units"))
+
+        )
+        ht_sent_act_2 = AddAnn(type="height", features=ParseNumericUnits(name_value="value",
+                                                                         name_units=None,
+                                                                         silent_fail=True))
+        rule_list.append(Rule(ht_sent_pat_2, ht_sent_act_2))
+
         return rule_list
