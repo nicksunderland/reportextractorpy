@@ -14,6 +14,7 @@ class TestPatterns(unittest.TestCase):
     def setUpClass(cls):
         cls.data_processor = DataProcessing("echocardiogram")
 
+    # cycle the yamls
     def test_parse_cases_yaml(self):
 
         pattern_fps = glob(tests.__path__[0] + '/**/*.yml', recursive=True)
