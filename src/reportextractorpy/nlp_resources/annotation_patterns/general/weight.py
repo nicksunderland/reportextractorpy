@@ -67,7 +67,8 @@ class PatientWeight(AbstractPatternAnnotator):
         token_filter = \
             AnnAt(type="Token")\
             .within(type="VarSentence", features=FeatureMatcher(type="weight"))\
-            .notat(type="Lookup", features=FeatureMatcher(minor=re.compile(r"(?i)indexed|body_surface_area")))\
+            .notat(type="Lookup", features=FeatureMatcher(minor=re.compile(r"(?i)indexed|body_surface_area"))) \
+            .notat(type="Lookup", features=FeatureMatcher(major=re.compile(r"(?i)quantity_change"))) \
             .notat(type="ReportSection")\
             .notat(type="Anatomy")\
             .notat(type="Measurement")
@@ -95,7 +96,7 @@ class PatientWeight(AbstractPatternAnnotator):
         """
         Blocker 1
         Description: Block things such as:
-        Examples: 'the patient's weight decreased 7 stone' and 'patient reports 20kg weight loss'
+        Examples: 'patient reports 20kg weight loss'
         """
         blocker_1 = (
             (context |
@@ -143,26 +144,25 @@ class PatientWeight(AbstractPatternAnnotator):
         Description: Block things such as:
         Examples: 'the patient's weight decreased 7 stone' or 'patient admits to putting at least 3 stone of weight on'
         """
-        # blocker_3 = (
-        #         (context |
-        #          AnnAt(type="Lookup", features=FeatureMatcher(minor="patient"))
-        #          .within(type="VarSentence", features=FeatureMatcher(type="weight"))) >>
-        #
-        #         token_filter.repeat(0, 8) >>
-        #
-        #         AnnAt(type="Lookup", features=FeatureMatcher(major="quantity_change"))
-        #         #>>
-        #         #
-        #         # token_filter.repeat(0, 2) >>
-        #         #
-        #         # (imperial_weight | (metric_weight >> metric_weight_units)) >>
-        #         #
-        #         # token_filter.repeat(0, 2) >>
-        #         #
-        #         # AnnAt(type="Lookup", features=FeatureMatcher(minor="preposition")).repeat(0, 1)
-        # )
-        # blocker_3_act = AddAnn(type="Blocked", annset_name="", features={"type": "weight"})
-        # rule_list.append(Rule(blocker_3, blocker_3_act))
+        blocker_3 = (
+                (context |
+                 AnnAt(type="Lookup", features=FeatureMatcher(minor="patient"))
+                 .within(type="VarSentence", features=FeatureMatcher(type="weight"))) >>
+
+                token_filter.repeat(0, 8) >>
+
+                AnnAt(type="Lookup", features=FeatureMatcher(major="quantity_change")) >>
+
+                token_filter.repeat(0, 2) >>
+
+                (imperial_weight | (metric_weight >> metric_weight_units)) >>
+
+                token_filter.repeat(0, 2) >>
+
+                AnnAt(type="Lookup", features=FeatureMatcher(minor="preposition")).repeat(0, 1)
+        )
+        blocker_3_act = AddAnn(type="Blocked", annset_name="", features={"type": "weight"})
+        rule_list.append(Rule(blocker_3, blocker_3_act))
 
         """
         PatientWeight

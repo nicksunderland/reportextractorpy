@@ -41,7 +41,7 @@ class PatientHeight(AbstractPatternAnnotator):
         self.var_name = "height"
         self.outset_name = outset_name
         self.included_annots = [("", ["Token", "VarSentence", "Anatomy", "Numeric", "Units", "Lookup",
-                                      "ImperialMeasurement", "ReportSection", "Measurement", "Categorical"])]
+                                      "ImperialMeasurement", "ReportSection", "Measurement", "Categorical", "Split"])]
         self.pampac_skip = "longest"
         self.pampac_select = "first"
         self.rule_list = self.gen_rule_list()
@@ -58,15 +58,13 @@ class PatientHeight(AbstractPatternAnnotator):
         Macro: CONTEXT
         """
         context = \
-            AnnAt(type="Lookup", features=FeatureMatcher(minor="height"), name="context")\
-            .within(type="VarSentence", features=FeatureMatcher(type="height"))
+            AnnAt(type="Lookup", features=FeatureMatcher(minor="height"), name="context")
 
         """
         Macro: FILTER
         """
         token_filter = \
             AnnAt(type="Token")\
-            .within(type="VarSentence", features=FeatureMatcher(type="height"))\
             .notat(type="Lookup", features=FeatureMatcher(minor="indexed"))\
             .notat(type="ReportSection")\
             .notat(type="Anatomy")\
@@ -75,22 +73,20 @@ class PatientHeight(AbstractPatternAnnotator):
         """
         Macro: METRIC_LENGTH
         """
-        metric_length = AnnAt(type="Numeric", name="value")\
-            .within(type="VarSentence", features=FeatureMatcher(type="height"))
+        metric_length = AnnAt(type="Numeric", name="value")
 
         """        
         Macro: IMPERIAL_LENGTH
         """
         imperial_length = \
-            AnnAt(type="ImperialMeasurement", features=FeatureMatcher(major="length"), name="value")\
-            .within(type="VarSentence", features=FeatureMatcher(type="height"))
+            AnnAt(type="ImperialMeasurement", features=FeatureMatcher(major="length"), name="value")
 
         """
         Macro: METRIC_LENGTH_UNITS
         """
         metric_length_units = \
             AnnAt(type="Units", features=FeatureMatcher(major="length"), name="units")\
-            .within(type="VarSentence", features=FeatureMatcher(type="height"))
+            .notat(type="Units", features=FeatureMatcher(minor="mm"))
         #how to do this???    !Units.minorType == "mm"}
 
         """
@@ -122,7 +118,8 @@ class PatientHeight(AbstractPatternAnnotator):
 
                 token_filter.repeat(0, 1) >>
 
-                Lookahead(metric_length, AnnAt().notat(type="Units"))
+                Lookahead(metric_length, Or(AnnAt().notat(type="Units"),
+                                            AnnAt(type="Split")))
 
         )
         ht_sent_act_2 = AddAnn(type="height", features=ParseNumericUnits(name_value="value",

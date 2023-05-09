@@ -1,0 +1,148 @@
+---
+var_name: height
+phrases:
+ - text: "the height is 135cm"
+   value: 135
+   units: cm
+ - text: "patient is 200cm"
+   value: 200
+   units: cm
+ - text: "STUDY_COMMENTS: H 1m 85cm"
+   value: 185
+   units: cm
+ - text: "Obese pt. Tachycarida 100-110 bpm."
+   value:
+   units:
+ - text: "Patient had  10 beats broad complax tachycardia "
+   value:
+   units:
+ - text: "Patient comments 10 day worsening SOB."
+   value:
+   units:
+ - text: "STUDY_COMMENTS: Patient weight 107lg"
+   value:
+   units:
+ - text: "Normal BSA range for patient age and BSA 27-42mm\n, Ht 180cm BSA 2.0m2."
+   value: 180
+   units: cm
+ - text: "height: 168. AORTA: There is slight increase in SOV diameter. Sinus of Valsalva measures 4 cm; This is dilated for height and has increased from 3.1 cm"
+   value: 168
+   units: cm
+ - text: "Report:\n height: 170\nAORTA:\nThis is dilated indexed to height at 22.8 mm/m."
+   value: 170
+   units: cm
+ - text: "Patient has an UltraCor 21mm"
+   value:
+   units:
+ - text: "Report:\nheight: 165."
+   value: 165
+   units: cm
+ - text: "OPERATOR_TWO_ID: -1\nOVERALL_IMPRESSION: Patient approx 80 inches and unknown kg.  ECG - sinus rhythm. HR 75-85bpm.\n1. Non dilated LV with mildly impaired overall systolic function (see text).\n2. Normal atria.\n3. No significant valvular pathology."
+   value: 203.2
+   units: cm
+ - text: "referral_details\nTTE_INDICATION\nSTUDY_COMMENTS: Patient approx 157cm and 84kg. BSA 1.85m_. ECG - sinus rhythm. HR approx 73bpm."
+   value: 157
+   units: cm
+ - text: "TTE_INDICATION\nSTUDY_COMMENTS: Patient's approx H 5' 5*, W 9st 3lbs, BSA 1.64m_"
+   value: 165
+   units: cm
+# - text: "here is some text with a ridiculous height of 130m, and a more reasonable height of 150cm, we should chose the second value if the variable dictonary limits are set orrectly. "
+#   value: 150
+#   units: cm
+# - text: "TTE_INDICATION\nOVERALL_IMPRESSION: ECG - sinus rhythm. HR approx bpm. Pt approx 5ft 3"" and 102kg. BSA 2.21m_."
+#   value: 160
+#   units: cm
+# - text: "TTE_INDICATION\nHeight: 155cm,  Weight: 127kg, BSA: 2.2m_. ECG - sinus rhythm. HR approx 90bpm."
+#   value: 155
+#   units: cm
+# - text: "TTE_INDICATION\nSTUDY_COMMENTS: Patient approx 6foot and 58kg. BSA 1.54m_."
+#   value: 183
+#   units: cm
+# - text: "TTE_INDICATION\nSTUDY_COMMENTS:\nHeight: 168cm,  Weight: 76kg,  BSA: 1.86m_."
+#   value: 168
+#   units: cm
+# - text: "OVERALL_IMPRESSION: Patient approx 156cm and 8305kg. BSA m_."
+#   value: 156
+#   units: cm
+
+#
+#   var_name,text,expected_value,expected_units
+#
+#
+#   height,"TTE_INDICATION
+#   Patient approx 175cm and 92kg. BSA 2.08m_.",175,cm
+#   height,"TTE_INDICATION
+#   STUDY_COMMENTS: Patient approx 163cm and 97kg. BSA 2.02m_.",163,cm
+#   height,"TTE_INDICATION
+#   STUDY_COMMENTS: Patient approx 170cm and 67kg. BSA 1.78m_.",170,cm
+#   height,"OVERALL_IMPRESSION: Height 178cm, weight 66.8kg BSA 1.83m_",178,cm
+#   height,"TTE_INDICATION
+#   STUDY_COMMENTS: HT 178cm. WT 76kg. BSA 1.94m2",178,cm
+#   height,"TTE_INDICATION
+#   STUDY_COMMENTS: Ht 175cm. Wt; 80kg. BSA 1.96m2",175,cm
+#   height,"OVERALL_IMPRESSION:
+#   Patient approx 163cm and 108.2kg. BSA 2.11m_.",163,cm
+#   height,"OVERALL_IMPRESSION:
+#   Pt approx 180cm and 85.5kg. BSA 2.05m_.",180,cm
+#   height,OVERALL_IMPRESSION: Patient approx 165cm and 64kg. BSA 1.7m_.,165,cm
+#   height,"TTE_INDICATION
+#   STUDY_COMMENTS: Patient approx 177cm and 80kg. BSA 1.97m_.",177,cm
+#   height,"OVERALL_IMPRESSION:
+#   Patient approx 168cm and 61kg. BSA 1.69m_.",168,cm
+#   height,STUDY_COMMENTS: Patient approx 160cm and 48kg. BSA 1.5m_.,160,cm
+#   height,"TTE_INDICATION
+#   OVERALL_IMPRESSION: ECG - sinus rhythm. HR 55bpm. Patient approx 170cm and 60kg. BSA 1.69m_.",170,cm
+#   height,"TTE_INDICATION
+#   STUDY_COMMENTS: HT 154cm. WT 74KG BSA 1.7msq",154,cm
+#   height,"TTE_INDICATION
+#   STUDY_COMMENTS: Patient approx 160cm and 48.8kg. BSA 1.49m_.",160,cm
+#   height,"OVERALL_IMPRESSION: ECG sinus rhythm at 90bpm. Patient height 164cm, weight 124kg, BSA 2.25m_.",164,cm
+#   height,"TTE_INDICATION
+#   STUDY_COMMENTS:
+#     Height:
+#       188cm,  Weight:
+#         66kg,  BSA: 1.90m_
+#   ",188,cm
+#   height,"OVERALL_IMPRESSION:
+#   Pt approx 171cm and 100kg. BSA 2.11m_.",171,cm
+#   height,OVERALL_IMPRESSION: Patient approx 182cm and 111kg. BSA 2.31m_.,182,cm
+#   height,"TTE_INDICATION
+#   Patient approx 183cm and 92kg. BSA 2.14m_.",183,cm
+#   height,OVERALL_IMPRESSION: Patient approx 178cm and 76kg. BSA 1.94m_.,178,cm
+#   height,STUDY_COMMENTS: Ht 167cm. Wt 60kg. BSA 1.67m2,167,cm
+#   height,"TTE_INDICATION
+#   OVERALL_IMPRESSION: Patient approx 175cm and 76kg. BSA 1.9m_.",175,cm
+#   height,"OVERALL_IMPRESSION: Patient approx 174cm and 88kg. BSA 2.03m_.
+#   ",174,cm
+#   height,"OVERALL_IMPRESSION:
+#   Pt height 163cm and weight 91.2kg.BSA 1.96m_
+#   ",163,cm
+#   height,"STUDY_COMMENTS:
+#                Height: 170cm
+#   Weight: 77kg
+#   BSA: 1.88m2",170,cm
+#   height,OVERALL_IMPRESSION: Patient approx 163cm and 64kg. BSA 1.69m_.,163,cm
+#   height,"TTE_INDICATION
+#   STUDY_COMMENTS: Patient approx 180cm and 100kg. BSA 2.20m_.",180,cm
+#   height,"OVERALL_IMPRESSION: ECG sinus rhythm/bradycardia at 55bpm. Patient height 165cm, weight 89kg, BSA 1.96m_.",165,cm
+#   height,Patient approx 173cm and 64kg. BSA 1.76m_.,173,cm
+#   height,OVERALL_IMPRESSION: Patient approx 160 cm and 76 kg. BSA 1.79 m_.,160,cm
+#   height,STUDY_COMMENTS: Patient approx 175 cm and 76 kg. BSA 1.91m_.,175,cm
+#   height,OVERALL_IMPRESSION: Patient approx 183cm and 98.4kg. BSA 2.21m_.,183,cm
+#   height,"OVERALL_IMPRESSION: ECG sinus rhythm at 60bpm. Patient height 157cm, weight 64kg. BSA 1.64m_.",157,cm
+#   height,STUDY_COMMENTS: Patient approx 191 cm and 131 kg. BSA 2.57 m_.,191,cm
+#   height,OVERALL_IMPRESSION: Pt approx 175cm and 76.5kg. BSA 1.92m_.,175,cm
+#   height,"STUDY_COMMENTS: Patient approx 165cm and 73.5kg. BSA 1.81m_.
+#   ",165,cm
+#   height,STUDY_COMMENTS: Patient approx 170 cm and 73 kg. BSA 1.84 m_.,170,cm
+#   height,"OVERALL_IMPRESSION: ECG - sinus rhythm. HR 60bpm. Patient approx 162.5cm and 64kg. BSA 1.69m_.
+#   ",162.5,cm
+#   height,STUDY_COMMENTS: Patient approx 160cm and 62kg. BSA 1.64 m_.,160,cm
+#   height,OVERALL_IMPRESSION: Patient approx 185cm and 136kg. BSA 2.55m_.,185,cm
+#   height,OVERALL_IMPRESSION: Patient in NSR,,
+#   height,"OVERALL_IMPRESSION: Patient bradycardic with frequent ectopics
+#   Right atrium appears long, area 1000cm2",,
+#   height,"STUDY_COMMENTS: Height 1.75m, weight 98kg, BSA 2.19m2.",175,cm
+#
+#
+#

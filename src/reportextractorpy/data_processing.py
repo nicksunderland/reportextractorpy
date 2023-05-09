@@ -39,6 +39,7 @@ class DataProcessing(QtCore.QObject):
                 doc = self.corpus[index]
                 doc = self.processing_pipeline(doc)
                 self.processing_complete_signal.emit(doc)
+                return doc
             except IndexError:
                 print(f'Index error in DataProcessing.run() with index {index} but corpus only containing '
                       f'{len(self.corpus)} documents')
