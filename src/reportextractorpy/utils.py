@@ -82,7 +82,7 @@ class Utils:
                 """.format(phase_file,  not_found_modules))
 
         except (ModuleNotFoundError, ValueError) as e:
-            print(e)
+            raise
             # TODO: add a warning for if there is a package pattern module for the mode that isn't used
 
         return phase_modules

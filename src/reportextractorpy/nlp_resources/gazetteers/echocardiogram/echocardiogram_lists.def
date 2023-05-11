@@ -1,22 +1,3 @@
-section_headers/aorta.lst:header:aorta:en:SectionHeader
-section_headers/aortic_valve.lst:header:aortic_valve:en:SectionHeader
-section_headers/image_quality.lst:header:image_quality:en:SectionHeader
-section_headers/left_atrium.lst:header:left_atrium:en:SectionHeader
-section_headers/left_ventricle.lst:header:left_ventricle:en:SectionHeader
-section_headers/mitral_valve.lst:header:mitral_valve:en:SectionHeader
-section_headers/pulmonary_valve.lst:header:pulmonary_valve:en:SectionHeader
-section_headers/right_atrium.lst:header:right_atrium:en:SectionHeader
-section_headers/right_ventricle.lst:header:right_ventricle:en:SectionHeader
-section_headers/right_sided_structures.lst:header:right_sided_structures:en:SectionHeader
-section_headers/tricsupid_valve.lst:header:tricsupid_valve:en:SectionHeader
-section_headers/pericardium.lst:header:pericardium:en:SectionHeader
-section_headers/miscellaneous.lst:header:miscellaneous:en:SectionHeader
-section_headers/summary.lst:header:summary:en:SectionHeader
-section_headers/normal_study_flag.lst:header:normal_study:en:SectionHeader
-
-cardiac_rhythm/sinus_rhythm.lst:cardiac_rhythm:sinus_rhythm:en
-cardiac_rhythm/heart_rate.lst:cardiac_rhythm:heart_rate:en
-cardiac_rhythm/ecg.lst:ecg:ecg:en
 
 
 

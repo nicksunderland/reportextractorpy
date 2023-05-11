@@ -2,7 +2,7 @@
 var_name: weight
 phrases:
  - text: "Patient's approx. height 5' 7*, weight 11st 5lb, BSA 1.83m_"
-   value: 72.1
+   value: 72.12
    units: kg
 
 #

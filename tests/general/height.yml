@@ -44,7 +44,7 @@ phrases:
    value: 157
    units: cm
  - text: "TTE_INDICATION\nSTUDY_COMMENTS: Patient's approx H 5' 5*, W 9st 3lbs, BSA 1.64m_"
-   value: 165
+   value: 165.1
    units: cm
 # - text: "here is some text with a ridiculous height of 130m, and a more reasonable height of 150cm, we should chose the second value if the variable dictonary limits are set orrectly. "
 #   value: 150

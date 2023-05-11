@@ -4,6 +4,11 @@ height:
   units: "cm"
   min: 100
   max: 200
+weight:
+  description: "The patient's weight"
+  units: "kg"
+  min: 30
+  max: 300
 ao_sov:
   description: "Sinus of Valsalva diameter"
   units: "cm"

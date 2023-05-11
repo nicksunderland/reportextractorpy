@@ -9,7 +9,7 @@ from typing import List
 import re
 
 
-class Pattern(AbstractPatternAnnotator):
+class Numerical(AbstractPatternAnnotator):
 
     def __init__(self, outset_name):
         self.var_name = ""

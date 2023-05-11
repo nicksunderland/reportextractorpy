@@ -20,14 +20,18 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.ui.plain_text_edit_input.setPlainText("""height: 170\nthe descending aorta is non dilated.
-        patient reports 20kg weight loss
-        Example: 'weight is 150kg'. 
-        'patient's BSA (6.0kg)'.
-        'the patient's weight decreased 7 stone'.
-        'patient admits to putting at least 3 stone of weight on'
-        the patient's weight decreased 7 stone. Testing 'the patient is 159kg'. 
-        'the patient is 9 1pounds'""")
+        self.ui.plain_text_edit_input.setPlainText("""the descending aorta is non dilated.\n
+the descending aorta is non dilated.
+
+test. 
+
+aortic root non-dilated (33mm at Sov level).
+
+non-dilated aortic root (33mm Sov level).
+
+
+Mildly dilated proximal aorta (3.9cm at sinus level....
+        """)
         self.web_engine_view = QWebEngineView(self.ui.centralwidget)
         self.ui.html_widget_holder_layout.addWidget(self.web_engine_view)
         self.make_connections()

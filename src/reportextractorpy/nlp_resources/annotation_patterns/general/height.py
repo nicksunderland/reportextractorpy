@@ -8,7 +8,7 @@ from typing import List
 import re
 
 
-class TagVarSentence(AbstractPatternAnnotator):
+class TagVarSentenceHeight(AbstractPatternAnnotator):
     def __init__(self, outset_name):
         self.var_name = "VarSentence"
         self.outset_name = ""

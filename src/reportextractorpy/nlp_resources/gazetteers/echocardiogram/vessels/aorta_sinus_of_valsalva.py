@@ -6,10 +6,10 @@ class Gazetteer(AbstractGazetteer):
     annot_features = {"major": "aorta",
                       "minor": "sinus_of_valsalva"}
     regex_rules = [
-        re.compile(r'\bsinus[\s-]{0,2}(?:[of]{2})?[\s-]{0,2}vals[alv]{4}\b', flags=re.I),
-        re.compile(r'mm_sinus_of_valsalva', flags=re.I),
-        re.compile(r'\bs[.\s]?o[.\s]?v[.\s]?\b', flags=re.I),
-        re.compile(r'sinoval', flags=re.I)
+        re.compile(r'(?i)\bsinus[\s-]{0,2}(?:[of]{2})?[\s-]{0,2}vals[alv]{4}\b'),
+        re.compile(r'(?i)mm_sinus_of_valsalva'),
+        re.compile(r'(?i)\bs[.\s]?o[.\s]?v[.\s]?\b'),
+        re.compile(r'(?i)sinoval')
     ]
     string_matches = [  # keep for testing regex
         "sov",

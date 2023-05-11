@@ -6,7 +6,7 @@ from gatenlp.processing.gazetteer import StringRegexAnnotator
 from gatenlp.processing.pipeline import Pipeline
 from gatenlp.processing.executor import SerialCorpusExecutor
 from pyclbr import readmodule
-from gatenlp.pam.pampac import Rule, Pampac, PampacAnnotator, AnnAt, Or, N, AddAnn, And
+from gatenlp.pam.pampac import Rule, Pampac, PampacAnnotator, AnnAt, Or, N, AddAnn, And, Seq
 from gatenlp.pam.matcher import FeatureMatcher, IfNot
 from PyQt5 import QtCore
 from os import path
@@ -82,8 +82,13 @@ class DataProcessing(QtCore.QObject):
             regex_gazetteer.append(source=regex_rules, source_fmt="string")
 
         # Sentence tokenizer
-        pattern_sent = N(Or(AnnAt().notat(type="Split"),
-                            AnnAt(type="Split").within(type=re.compile(r'^(?!Split$|Token$)'))), min=1, max=40)
+        pattern_sent = Seq(
+                Or(
+                    AnnAt().notat(type="Split"),
+                    AnnAt(type="Split").within(type=re.compile(r'^(?!Split$|Token$)'))
+                ).repeat(1, 40),
+                AnnAt(type="Split", features=FeatureMatcher(kind="internal")).repeat(0, 1))
+
         action_sent = AddAnn(type="Sentence")
         rule_sent = Rule(pattern_sent, action_sent)
         pampac = Pampac(rule_sent, skip="longest", select="first")
@@ -96,10 +101,13 @@ class DataProcessing(QtCore.QObject):
             module_info = readmodule(module)  # read the .py file (but doesn't import) to a dictionary
             for cls_name, mod in module_info.items():  # for each class/phase defined in the module
                 if "AbstractPatternAnnotator" in mod.super:  # if the class inherits AbstractPatternAnnotator
-                    pattern_module = getattr(import_module(module), cls_name)  # actually import the specific class/phase
-                    for template_idx, annotator in enumerate(pattern_module(outset_name=self.mode)):  # each class might be a generator which produces templated phases
+                    pattern_module = getattr(import_module(module),
+                                             cls_name)  # actually import the specific class/phase
+                    for template_idx, annotator in enumerate(pattern_module(
+                            outset_name=self.mode)):  # each class might be a generator which produces templated phases
                         pattern_annotators.append(annotator)  # add the phase to the list
-                        print(f"\033[92mImport pattern class {cls_name}, template {template_idx}, from module {module} \033[0m")
+                        print(
+                            f"\033[92mImport pattern class {cls_name}, template {template_idx}, from module {module} \033[0m")
                 else:
                     raise Exception(
                         f'\n\tTrying to import a pattern module containing a class named \'{cls_name}\'\n'
@@ -119,8 +127,8 @@ class DataProcessing(QtCore.QObject):
             return config
 
     def __str__(self):
-        return("-----------------------------------\n"
-               "DataProcessing object:\n"
-               "\tMode:      {0}\n"
-               "\tPipeline:  add stuff here\n"
-               "\tData dict: {1}".format(self.mode, self.data_dict))
+        return ("-----------------------------------\n"
+                "DataProcessing object:\n"
+                "\tMode:      {0}\n"
+                "\tPipeline:  add stuff here\n"
+                "\tData dict: {1}".format(self.mode, self.data_dict))

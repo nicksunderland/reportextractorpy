@@ -8,7 +8,7 @@ from typing import List
 import re
 
 
-class TagVarSentence(AbstractPatternAnnotator):
+class TagVarSentenceWeight(AbstractPatternAnnotator):
     def __init__(self, outset_name):
         self.var_name = "VarSentence"
         self.outset_name = ""
@@ -40,7 +40,7 @@ class PatientWeight(AbstractPatternAnnotator):
     def __init__(self, outset_name):
         self.var_name = "weight"
         self.outset_name = outset_name
-        self.included_annots = [("", ["Token", "VarSentence", "Anatomy", "Numeric", "Units", "Lookup",
+        self.included_annots = [("", ["Token", "VarSentence", "Anatomy", "Numeric", "Units", "Lookup", "Split",
                                       "ImperialMeasurement", "ReportSection", "Measurement", "Categorical"])]
         self.pampac_skip = "longest"
         self.pampac_select = "first"
@@ -58,15 +58,13 @@ class PatientWeight(AbstractPatternAnnotator):
         Macro: CONTEXT
         """
         context = \
-            AnnAt(type="Lookup", features=FeatureMatcher(minor="weight"), name="context")\
-            .within(type="VarSentence", features=FeatureMatcher(type="weight"))
+            AnnAt(type="Lookup", features=FeatureMatcher(minor="weight"), name="context")
 
         """
         Macro: FILTER
         """
         token_filter = \
             AnnAt(type="Token")\
-            .within(type="VarSentence", features=FeatureMatcher(type="weight"))\
             .notat(type="Lookup", features=FeatureMatcher(minor=re.compile(r"(?i)indexed|body_surface_area"))) \
             .notat(type="Lookup", features=FeatureMatcher(major=re.compile(r"(?i)quantity_change"))) \
             .notat(type="ReportSection")\
@@ -76,22 +74,19 @@ class PatientWeight(AbstractPatternAnnotator):
         """
         Macro: METRIC_WEIGHT
         """
-        metric_weight = AnnAt(type="Numeric", name="value")\
-            .within(type="VarSentence", features=FeatureMatcher(type="weight"))
+        metric_weight = AnnAt(type="Numeric", name="value")
 
         """        
         Macro: IMPERIAL_WEIGHT
         """
         imperial_weight = \
-            AnnAt(type="ImperialMeasurement", features=FeatureMatcher(major="mass"), name="value")\
-            .within(type="VarSentence", features=FeatureMatcher(type="weight"))
+            AnnAt(type="ImperialMeasurement", features=FeatureMatcher(major="mass"), name="value")
 
         """
         Macro: METRIC_WEIGHT_UNITS
         """
         metric_weight_units = \
-            AnnAt(type="Units", features=FeatureMatcher(major="mass"), name="units")\
-            .within(type="VarSentence", features=FeatureMatcher(type="weight"))
+            AnnAt(type="Units", features=FeatureMatcher(major="mass"), name="units")
 
         """
         Blocker 1
@@ -195,10 +190,10 @@ class PatientWeight(AbstractPatternAnnotator):
 
                 AnnAt().repeat(0, 1) >>
 
-                Lookahead(metric_weight, AnnAt().notat(type="Units"))
-
+                Lookahead(metric_weight, Or(AnnAt().notat(type="Units"),
+                                            AnnAt(type="Split")))
         )
-        wt_sent_act_2 = AddAnn(type="height", features=ParseNumericUnits(name_value="value",
+        wt_sent_act_2 = AddAnn(type="weight", features=ParseNumericUnits(name_value="value",
                                                                          name_units=None,
                                                                          var_name=self.var_name,
                                                                          mode=self.outset_name,

@@ -8,7 +8,7 @@ from typing import List
 import re
 
 
-class Pattern(AbstractPatternAnnotator):
+class RefineAnnotations(AbstractPatternAnnotator):
 
     def __init__(self, outset_name):
         self.var_name = ""
