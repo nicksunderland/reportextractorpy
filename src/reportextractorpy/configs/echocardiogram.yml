@@ -1,13 +1,16 @@
 ---
+height:
+  description: "The patient's height"
+  units: "cm"
+  min: 100
+  max: 200
 ao_sov:
   description: "Sinus of Valsalva diameter"
-  value_type: "float"
   units: "cm"
   min: 0
   max: 10
 ao_stj:
   description: "Sinotubular junction diameter"
-  value_type: "float"
   units: "cm"
   min: 0
   max: 10
@@ -17,3 +20,74 @@ ao_asc:
   units: "cm"
   min: 0
   max: 10
+
+#weight	mass	kg	30	300	TRUE
+#height	length	cm	100	260	TRUE
+#bsa	area	m2	1	5	FALSE
+#bmi	mass	kg/m2	11	100	FALSE
+#ao_root_diam	length	cm	1.8	8	TRUE
+#ao_sov_diam	length	cm	1.8	8	TRUE
+#ao_stj_diam	length	cm	1.8	8	TRUE
+#ao_asc_diam	length	cm	1.8	8	TRUE
+#ao_root_diam_ht_idx	length	cm/m	0.8	5	TRUE
+#ao_sov_diam_ht_idx	length	cm/m	0.8	5	TRUE
+#ao_stj_diam_ht_idx	length	cm/m	0.8	5	TRUE
+#ao_asc_diam_ht_idx	length	cm/m	0.8	5	TRUE
+#ao_sov_cat	categorical	nondilated,dilated	NA	NA	FALSE
+#ao_stj_cat	categorical	nondilated,dilated	NA	NA	FALSE
+#ao_asc_cat	categorical	nondilated,dilated	NA	NA	FALSE
+#ao_root_cat	categorical	nondilated,dilated	NA	NA	FALSE
+#lv_ivs	length	cm	0.4	5	FALSE
+#lv_pwd	length	cm	0.1	100	FALSE
+#lv_lvidd	length	cm	0.1	100	FALSE
+#lv_lvids	length	cm	0.1	100	FALSE
+#lv_fs	percentage	%	0.1	100	FALSE
+#lv_ef_simpsons	percentage	%	0.1	100	FALSE
+#lv_ef_auto	percentage	%	0.1	100	FALSE
+#lv_ef_visual	percentage	%	0.1	100	FALSE
+#lv_ef_teicholz	percentage	%	0.1	100	FALSE
+#lv_sysfunc_cat	categorical	normal,low_normal,impaired,mild,mild_moderate,moderate,moderate_severe,severe	NA	NA	FALSE
+#lvot_diam	length	cm	0.1	100	FALSE
+#lvot_peak_vel	velocity	m/s	0.1	100	FALSE
+#lvot_mean_vel	velocity	m/s	0.1	100	FALSE
+#lvot_peak_grad	gradient	mmHg	0.1	100	FALSE
+#lvot_mean_grad	gradient	mmHg	0.1	100	FALSE
+#rv_d1	length	cm	0.1	100	FALSE
+#rv_fac	percentage	%	0.1	100	FALSE
+#rv_tdi_s	velocity	m/s	0.1	100	FALSE
+#rv_tapse	length	cm	0.1	100	FALSE
+#la_vol	volume	ml	0.1	100	FALSE
+#la_vol_idx	volume	ml/m2	0.1	100	FALSE
+#ra_area	area	cm2	0.1	100	FALSE
+#ra_area_idx	area	cm2/m2	0.1	100	FALSE
+#av_stenosis_cat	NA	NA	0.1	100	FALSE
+#av_regurg_cat	NA	NA	0.1	100	FALSE
+#av_peak_vel	NA	NA	0.1	100	FALSE
+#av_mean_vel	NA	NA	0.1	100	FALSE
+#av_peak_grad	NA	NA	0.1	100	FALSE
+#av_mean_grad	NA	NA	0.1	100	FALSE
+#av_area_vti	NA	NA	0.1	100	FALSE
+#av_area_vmax	NA	NA	0.1	100	FALSE
+#av_area_2d	NA	NA	0.1	100	FALSE
+#mv_stenosis_cat	NA	NA	0.1	100	FALSE
+#mv_regurg_cat	NA	NA	0.1	100	FALSE
+#mv_peak_vel	NA	NA	0.1	100	FALSE
+#mv_tdi_s_lat	NA	NA	0.1	100	FALSE
+#mv_tdi_e_lat	NA	NA	0.1	100	FALSE
+#mv_tdi_s_med	NA	NA	0.1	100	FALSE
+#mv_tdi_e_med	NA	NA	0.1	100	FALSE
+#mv_e_vel	NA	NA	0.1	100	FALSE
+#mv_a_vel	NA	NA	0.1	100	FALSE
+#mv_dec_time	NA	NA	0.1	100	FALSE
+#mv_e_a	NA	NA	0.1	100	FALSE
+#mv_e_e_avg	NA	NA	0.1	100	FALSE
+#tv_stenosis_cat	NA	NA	0.1	100	FALSE
+#tv_regurg_cat	NA	NA	0.1	100	FALSE
+#tv_peak_vel	NA	NA	0.1	100	FALSE
+#tv_peak_grad	NA	NA	0.1	100	FALSE
+#pv_stenosis_cat	NA	NA	0.1	100	FALSE
+#pv_regurg_cat	NA	NA	0.1	100	FALSE
+#pv_peak_vel	NA	NA	0.1	100	FALSE
+#pv_acc_time	NA	NA	0.1	100	FALSE
+#pc_eff	NA	NA	0.1	100	FALSE
+#pl_eff	NA	NA	0.1	100	FALSE

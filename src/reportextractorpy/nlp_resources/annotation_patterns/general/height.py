@@ -105,6 +105,8 @@ class PatientHeight(AbstractPatternAnnotator):
         )
         ht_sent_act = AddAnn(type="height", features=ParseNumericUnits(name_value="value",
                                                                        name_units="units",
+                                                                       var_name=self.var_name,
+                                                                       mode=self.outset_name,
                                                                        silent_fail=True))
         rule_list.append(Rule(ht_sent_pat, ht_sent_act))
 
@@ -124,6 +126,8 @@ class PatientHeight(AbstractPatternAnnotator):
         )
         ht_sent_act_2 = AddAnn(type="height", features=ParseNumericUnits(name_value="value",
                                                                          name_units=None,
+                                                                         var_name=self.var_name,
+                                                                         mode=self.outset_name,
                                                                          silent_fail=True))
         rule_list.append(Rule(ht_sent_pat_2, ht_sent_act_2))
 

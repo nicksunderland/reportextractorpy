@@ -1,6 +1,8 @@
+from reportextractorpy.utils import Utils
 from gatenlp.pam.pampac import actions, Getter
 from gatenlp.pam.pampac.actions import _get_span, _get_match
 import inspect
+from typing import List, Tuple
 
 
 class GetNumberFromText(Getter):
@@ -147,6 +149,236 @@ class GetList(Getter):
 
         return text_to_return
 
+
+class ParseNumericUnits(Getter):
+    """
+    Helper to parse value:units annotation groups.
+    """
+    std_length = "cm"
+    std_velocity = "m/s"
+    std_mass = "kg"
+    std_pressure = "cmH2O"
+    unit_map = {
+        "length": {
+            'mm': 0.001,
+            'cm': 0.01,
+            'm': 1.0,
+            'km': 1000.0,
+            'in': 0.0254,
+            'ft': 0.3048,
+            'yd': 0.9144,
+            'mi': 1609.34
+        },
+        "weight": {
+            'mg': 0.000001,
+            'g': 0.001,
+            'kg': 1.0,
+            'lb': 0.453592,
+            'oz': 0.0283495,
+            'st': 6.35029
+        },
+        "pressure": {
+            'Pa': 1.0,
+            'kPa': 1000.0,
+            'MPa': 1000000.0,
+            'psi': 6894.76,
+            'bar': 100000.0,
+            'cmH2O': 98.0665
+        },
+        "velocity": {
+            'm/s': 1.0,
+            'km/h': 0.277778,
+            'mph': 0.44704
+        }
+    }
+
+    def __init__(self,
+                 name_value: str,
+                 var_name: str,
+                 mode: str,
+                 name_units: str | None,
+                 func: callable = lambda x: sum([float(v) for v in x]) / len(x),
+                 silent_fail: bool = False):
+        """
+        Create a ParseNumericUnits helper.
+        Args:
+            name_value: the name of the value match to use.
+            name_units: the name of the units match to use.
+            func: the function to apply if 2 values are matched
+            silent_fail: if True, do not raise an exception if annotations cannot be found, instead return None
+        :return a dictionary {value: XX, units: YY}
+        """
+        self.name_value = name_value
+        self.name_units = name_units
+        self.func = func
+        self.var_name = var_name
+        self.mode = mode
+        self.silent_fail = silent_fail
+
+    def __call__(self, succ, context=None, location=None) -> dict:
+        parse_info = ""
+        try:
+            result = succ[0]
+            text_span = result.span
+            text = context.doc[text_span]
+        except IndexError as e:
+            raise Exception(f"{e}, no results in Success object {succ} when firing ParseNumericUnits()")
+
+        try:
+            value_matches = [float(match.get("ann").features["value"]) for match in result.matches
+                             if match.get("name") == self.name_value and match.get("ann").type == "Numeric"]
+
+            unit_matches = [match.get("ann").features["minor"] for match in result.matches
+                            if match.get("name") == self.name_units and match.get("ann").type == "Units"]
+            # print(value_matches)
+
+            if not value_matches:
+                imp_anns = [match.get("ann") for match in result.matches
+                            if match.get("name") == self.name_value and match.get("ann").type == "ImperialMeasurement"]
+                # print(imp_anns)
+                if imp_anns:
+                    ann = imp_anns[0]
+                    self.func = lambda x: sum(x)
+                    if ann.features["major"] == "mass":
+                        value_matches = [ann.features["stone"], ann.features["pounds"]]
+                        unit_matches = ["st", "lb"]
+                    elif ann.features["major"] == "length":
+                        value_matches = [ann.features["feet"], ann.features["inches"]]
+                        unit_matches = ["ft", "in"]
+                    else:
+                        value_matches = []
+                        unit_matches = []
+
+            if len(value_matches) == 0:
+                raise Exception(f"No values parsed from matches:\n{result.matches}")
+
+            # list of tuples(value, units)
+            if len(unit_matches) == len(value_matches):
+                tups = [t for t in zip(value_matches, unit_matches) if t[0] is not None]
+            elif len(unit_matches) == 1 and len(value_matches) > 1:
+                tups = [t for t in zip(value_matches, unit_matches * len(value_matches)) if t[0] is not None]
+            else:
+                tups = [t for t in zip(value_matches, [""] * len(value_matches)) if t[0] is not None]
+                tups = self.guess_units(tups, self.var_name, self.mode)
+                parse_info = "Tried to guessed units; "
+
+            # list of tuples(normalised_value, units)
+            normalised_values, normalised_units = zip(*self.standardize_units(tups))
+            #print(f'{normalised_values} {normalised_units}')
+
+            if len(normalised_values) > 1:
+                value = self.func(normalised_values)
+                units = normalised_units[0]
+                parse_info = f'{parse_info}{inspect.getsource(self.func)}'
+            else:
+                value = normalised_values[0]
+                units = normalised_units[0]
+                parse_info = f'{parse_info}Normalised value from {tups[0][1]} to {normalised_units[0]}'
+
+        except Exception:
+            raise
+
+        return {"context": text, "value": round(value, 2), "units": units, "parse_info": parse_info}
+
+    @classmethod
+    def guess_units(cls, tups: List[Tuple], var_name: str, mode: str):
+        try:
+            config = Utils.variable_config(mode)
+            config_units = config[var_name]["units"]
+            config_min = config[var_name]["min"]
+            config_max = config[var_name]["max"]
+            output_tups = []
+            config_units_found = False
+            for measurement_type, unit_map in cls.unit_map.items():
+                if config_units in unit_map:
+                    config_units_found = True
+                    correct_unit_map = unit_map
+                    for tup in tups:
+                        tmp_tup = tup
+                        for unit, _ in correct_unit_map.items():
+                            #print(f'try: value-{tup[0]} with unit-{unit}')
+                            tmp_standardised = cls.standardize_units([(tup[0], unit)])
+                            #print(f'got: {tmp_standardised}')
+                            standardised_value = tmp_standardised[0][0]
+                            standardised_unit = tmp_standardised[0][1]
+                            if config_max >= standardised_value >= config_min:
+                                tmp_tup = (standardised_value, standardised_unit)
+                                #print(f'final guess: {tmp_tup}')
+                                break
+                        output_tups.append(tmp_tup)
+                    #print(f'final tups: {output_tups}')
+                    break
+
+            if not config_units_found:
+                raise Exception(f"Config units for {var_name}, mode {mode},"
+                                f" not found in units dictionary, failed to guess units")
+
+            return output_tups
+
+        except KeyError:
+            raise Exception(f'Error parsing config for {var_name} in {mode}.yml variable config file')
+
+    @classmethod
+    def convert(cls, value, from_unit, to_unit):
+        """
+        Converts a value from one unit to another.
+
+        Parameters:
+            value (float): The value to convert.
+            from_unit (str): The unit to convert from.
+            to_unit (str): The unit to convert to. Defaults to 'm'.
+
+        Returns:
+            float: The converted value in the specified unit.
+        """
+        flat_units_map = {key: value
+                          for inner_dict in cls.unit_map.values()
+                          for key, value in inner_dict.items()}
+        if from_unit not in flat_units_map:
+            raise ValueError(f"Unknown unit: {from_unit}")
+        if to_unit not in flat_units_map:
+            raise ValueError(f"Unknown unit: {to_unit}")
+        return value * flat_units_map[from_unit] / flat_units_map[to_unit]
+
+    @classmethod
+    def standardize_units(cls, input_list):
+        """
+        Converts a list of tuples containing a float and a string representing the unit to SI units.
+
+        Parameters:
+            input_list (list): A list of tuples containing a float and a string representing the unit.
+
+        Returns:
+            list: A list of tuples with the float standardised to SI units and the string representing
+                  the units it has been standardised to.
+        """
+        output_list = []
+        for value, unit in input_list:
+
+            try:
+                if unit in ['mm', 'cm', 'm', 'km', 'in', 'ft', 'yd', 'mi']:
+                    # Convert length
+                    standard_value = cls.convert(value, unit, cls.std_length)
+                    output_list.append((standard_value, cls.std_length))
+                elif unit in ['mg', 'g', 'kg', 'lb', 'oz', 'st']:
+                    # Convert mass
+                    standard_value = cls.convert(value, unit, cls.std_mass)
+                    output_list.append((standard_value, cls.std_mass))
+                elif unit in ['Pa', 'kPa', 'MPa', 'psi', 'bar', 'cmH2O']:
+                    # Convert pressure
+                    standard_value = cls.convert(value, unit, cls.std_pressure)
+                    output_list.append((standard_value, cls.std_pressure))
+                elif unit in ['m/s', 'km/h', 'mph']:
+                    # Convert velocity
+                    standard_value = cls.convert(value, unit, cls.std_velocity)
+                    output_list.append((standard_value, cls.std_velocity))
+                else:
+                    output_list.append((value, unit))
+
+            except ValueError:
+                output_list.append((value, unit))
+
+        return output_list
 
 # Wont need these when the fix is implemented in GATE
 """
@@ -445,188 +677,3 @@ class GetRegexGroup(Getter):
                 raise Exception("Could not find regexp groups for match info")
 
 
-class ParseNumericUnits(Getter):
-    """
-    Helper to parse value:units annotation groups.
-    """
-    std_length = "cm"
-    std_velocity = "m/s"
-    std_mass = "kg"
-    std_pressure = "cmH2O"
-    unit_map = {
-        # Length units
-        'mm': 0.001,
-        'cm': 0.01,
-        'm': 1.0,
-        'km': 1000.0,
-        'in': 0.0254,
-        'ft': 0.3048,
-        'yd': 0.9144,
-        'mi': 1609.34,
-        # Weight units
-        'mg': 0.000001,
-        'g': 0.001,
-        'kg': 1.0,
-        'lb': 0.453592,
-        'oz': 0.0283495,
-        'st': 6.35029,  # stone
-        # Pressure units
-        'Pa': 1.0,
-        'kPa': 1000.0,
-        'MPa': 1000000.0,
-        'psi': 6894.76,
-        'bar': 100000.0,
-        'cmH2O': 98.0665,  # centimeters of water column
-        # Velocity units
-        'm/s': 1.0,
-        'km/h': 0.277778,
-        'mph': 0.44704
-    }
-
-    def __init__(self,
-                 name_value: str,
-                 name_units: str | None,
-                 func: callable = lambda x: sum([float(v) for v in x]) / len(x),
-                 var_type: str = None,
-                 silent_fail: bool = False):
-        """
-        Create a ParseNumericUnits helper.
-        Args:
-            name_value: the name of the value match to use.
-            name_units: the name of the units match to use.
-            func: the function to apply if 2 values are matched
-            silent_fail: if True, do not raise an exception if annotations cannot be found, instead return None
-        :return a dictionary {value: XX, units: YY}
-        """
-        self.name_value = name_value
-        self.name_units = name_units
-        self.func = func
-        self.var_type = var_type
-        self.silent_fail = silent_fail
-
-    def __call__(self, succ, context=None, location=None) -> dict:
-
-        text, value, units, tups, parse_info = None, None, None, None, None
-
-        try:
-            result = succ[0]
-            text_span = result.span
-            text = context.doc[text_span]
-        except IndexError as e:
-            raise Exception(f"{e}, no results in Success object {succ} when firing ParseNumericUnits()")
-
-        try:
-            value_matches = [float(match.get("ann").features["value"]) for match in result.matches
-                             if match.get("name") == self.name_value and match.get("ann").type == "Numeric"]
-
-            unit_matches = [match.get("ann").features["minor"] for match in result.matches
-                            if match.get("name") == self.name_units and match.get("ann").type == "Units"]
-
-            #print(value_matches)
-
-            if not value_matches:
-                imp_anns = [match.get("ann") for match in result.matches
-                            if match.get("name") == self.name_value and match.get("ann").type == "ImperialMeasurement"]
-
-                #print(imp_anns)
-
-                if imp_anns:
-                    ann = imp_anns[0]
-                    self.func = lambda x: sum(x)
-                    if ann.features["major"] == "mass":
-                        value_matches = [ann.features["stone"], ann.features["pounds"]]
-                        unit_matches = ["st", "lb"]
-                    elif ann.features["major"] == "length":
-                        value_matches = [ann.features["feet"], ann.features["inches"]]
-                        unit_matches = ["ft", "in"]
-                    else:
-                        value_matches = []
-                        unit_matches = []
-
-            if len(value_matches) == 0:
-                raise Exception(f"No values parsed from matches:\n{result.matches}")
-
-            if len(unit_matches) == len(value_matches):
-                tups = [t for t in zip(value_matches, unit_matches) if t[0] is not None]
-            elif len(unit_matches) == 1 and len(value_matches) > 1:
-                tups = [t for t in zip(value_matches, unit_matches * len(value_matches)) if t[0] is not None]
-            else:
-                # TODO function to guess units from config file
-                tups = [t for t in zip(value_matches, [""] * len(value_matches)) if t[0] is not None]
-                pass
-
-            #print(tups)
-
-            normalised_values, normalised_units = zip(*self.standardize_units(tups))
-            if len(normalised_values) > 1:
-                value = self.func(normalised_values)
-                units = normalised_units[0]
-                parse_info = f'{inspect.getsource(self.func)}'
-            else:
-                value = normalised_values[0]
-                units = normalised_units[0]
-                parse_info = f'Normalised value from {tups[0][1]} to {normalised_units[0]}'
-
-        except Exception as e:
-            print("excepted")
-
-        return {"context": text, "value": round(value, 2), "units": units, "parse_info": parse_info}
-
-    @classmethod
-    def convert(cls, value, from_unit, to_unit):
-        """
-        Converts a value from one unit to another.
-
-        Parameters:
-            value (float): The value to convert.
-            from_unit (str): The unit to convert from.
-            to_unit (str): The unit to convert to. Defaults to 'm'.
-
-        Returns:
-            float: The converted value in the specified unit.
-        """
-        if from_unit not in cls.unit_map:
-            raise ValueError(f"Unknown unit: {from_unit}")
-        if to_unit not in cls.unit_map:
-            raise ValueError(f"Unknown unit: {to_unit}")
-        return value * cls.unit_map[from_unit] / cls.unit_map[to_unit]
-
-    @classmethod
-    def standardize_units(cls, input_list):
-        """
-        Converts a list of tuples containing a float and a string representing the unit to SI units.
-
-        Parameters:
-            input_list (list): A list of tuples containing a float and a string representing the unit.
-
-        Returns:
-            list: A list of tuples with the float standardised to SI units and the string representing
-                  the units it has been standardised to.
-        """
-        output_list = []
-        for value, unit in input_list:
-
-            try:
-                if unit in ['mm', 'cm', 'm', 'km', 'in', 'ft', 'yd', 'mi']:
-                    # Convert length
-                    standard_value = cls.convert(value, unit, cls.std_length)
-                    output_list.append((standard_value, cls.std_length))
-                elif unit in ['mg', 'g', 'kg', 'lb', 'oz', 'st']:
-                    # Convert mass
-                    standard_value = cls.convert(value, unit, cls.std_mass)
-                    output_list.append((standard_value, cls.std_mass))
-                elif unit in ['Pa', 'kPa', 'MPa', 'psi', 'bar', 'cmH2O']:
-                    # Convert pressure
-                    standard_value = cls.convert(value, unit, cls.std_pressure)
-                    output_list.append((standard_value, cls.std_pressure))
-                elif unit in ['m/s', 'km/h', 'mph']:
-                    # Convert velocity
-                    standard_value = cls.convert(value, unit, cls.std_velocity)
-                    output_list.append((standard_value, cls.std_velocity))
-                else:
-                    output_list.append((value, unit))
-
-            except ValueError:
-                output_list.append((value, unit))
-
-        return output_list

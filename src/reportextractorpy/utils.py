@@ -38,6 +38,17 @@ class Utils:
         return return_list
 
     @staticmethod
+    def variable_config(mode: str):
+        if mode == "echocardiogram":
+            config_file = path.join(Utils.configs_path(), mode + ".yml")
+            with open(config_file) as f:
+                config = safe_load(f)
+                return config
+        else:
+            # TODO: add cardiac MRI and other modes
+            raise ValueError("Incorrect mode: [str] option passed to Utils.variable_config_path()")
+
+    @staticmethod
     def pattern_modules_list(mode: str) -> list:
         try:
             if mode == "echocardiogram":
