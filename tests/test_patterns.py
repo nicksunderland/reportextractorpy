@@ -3,6 +3,7 @@ import yaml
 import tests
 from reportextractorpy.data_processing import DataProcessing
 from glob import glob
+import os
 
 from pkgutil import walk_packages
 import importlib_resources
@@ -15,9 +16,11 @@ class TestPatterns(unittest.TestCase):
         cls.data_processor = DataProcessing("echocardiogram")
 
     # cycle the yamls
-    def test_parse_cases_yaml(self):
+    def test_extraction(self):
 
         pattern_fps = glob(tests.__path__[0] + '/**/*.yml', recursive=True)
+        variable = os.environ.get('variable')  # set this in the run configuration
+        pattern_fps = [fp for fp in pattern_fps if variable in fp or variable == "all"]
 
         for yml in pattern_fps:
             with open(yml) as f:

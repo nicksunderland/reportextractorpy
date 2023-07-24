@@ -5,7 +5,6 @@ phrases:
    value: 72.12
    units: kg
 
-#
 #  var_name,text,expected_value,expected_units
 # weight,"STUDY_COMMENTS: Patient weight 107lg
 #   ",107,kg

@@ -46,29 +46,27 @@ phrases:
  - text: "TTE_INDICATION\nSTUDY_COMMENTS: Patient's approx H 5' 5*, W 9st 3lbs, BSA 1.64m_"
    value: 165.1
    units: cm
-# - text: "here is some text with a ridiculous height of 130m, and a more reasonable height of 150cm, we should chose the second value if the variable dictonary limits are set orrectly. "
-#   value: 150
-#   units: cm
-# - text: "TTE_INDICATION\nOVERALL_IMPRESSION: ECG - sinus rhythm. HR approx bpm. Pt approx 5ft 3"" and 102kg. BSA 2.21m_."
-#   value: 160
-#   units: cm
-# - text: "TTE_INDICATION\nHeight: 155cm,  Weight: 127kg, BSA: 2.2m_. ECG - sinus rhythm. HR approx 90bpm."
-#   value: 155
-#   units: cm
-# - text: "TTE_INDICATION\nSTUDY_COMMENTS: Patient approx 6foot and 58kg. BSA 1.54m_."
-#   value: 183
-#   units: cm
-# - text: "TTE_INDICATION\nSTUDY_COMMENTS:\nHeight: 168cm,  Weight: 76kg,  BSA: 1.86m_."
-#   value: 168
-#   units: cm
-# - text: "OVERALL_IMPRESSION: Patient approx 156cm and 8305kg. BSA m_."
-#   value: 156
-#   units: cm
+ - text: "here is some text with a ridiculous height of 130m, and a more reasonable height of 150cm, we should chose the second value if the variable dictonary limits are set orrectly. "
+   value: 150
+   units: cm
+ - text: "TTE_INDICATION\nOVERALL_IMPRESSION: ECG - sinus rhythm. HR approx bpm. Pt approx 5ft 3\" and 102kg. BSA 2.21m_."
+   value: 160
+   units: cm
+ - text: "TTE_INDICATION\nHeight: 155cm,  Weight: 127kg, BSA: 2.2m_. ECG - sinus rhythm. HR approx 90bpm."
+   value: 155
+   units: cm
+ - text: "TTE_INDICATION\nSTUDY_COMMENTS: Patient approx 6foot and 58kg. BSA 1.54m_."
+   value: 183
+   units: cm
+ - text: "TTE_INDICATION\nSTUDY_COMMENTS:\nHeight: 168cm,  Weight: 76kg,  BSA: 1.86m_."
+   value: 168
+   units: cm
+ - text: "OVERALL_IMPRESSION: Patient approx 156cm and 8305kg. BSA m_."
+   value: 156
+   units: cm
 
-#
+
 #   var_name,text,expected_value,expected_units
-#
-#
 #   height,"TTE_INDICATION
 #   Patient approx 175cm and 92kg. BSA 2.08m_.",175,cm
 #   height,"TTE_INDICATION
@@ -143,6 +141,3 @@ phrases:
 #   height,"OVERALL_IMPRESSION: Patient bradycardic with frequent ectopics
 #   Right atrium appears long, area 1000cm2",,
 #   height,"STUDY_COMMENTS: Height 1.75m, weight 98kg, BSA 2.19m2.",175,cm
-#
-#
-#
