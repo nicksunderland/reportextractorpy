@@ -1,7 +1,7 @@
 ---
 var_name: height
 phrases:
- - text: "the height is 135cm"
+ - text: "the height is 135cm here."
    value: 135
    units: cm
  - text: "patient is 200cm"
